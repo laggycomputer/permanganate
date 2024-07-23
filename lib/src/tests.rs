@@ -13,13 +13,13 @@ mod tests {
 
     #[test]
     fn step_invalid() {
-        let board = NumberlinkBoard::default();
+        let board = NumberlinkBoard::with_dims((3, 3));
         assert_eq!(board.step((0, 0), BoardTraverseDirection::UP), None);
     }
 
     #[test]
     fn step_valid() {
-        let board = NumberlinkBoard::default();
+        let board = NumberlinkBoard::with_dims((5, 5));
         assert_eq!(board.step((4, 4), BoardTraverseDirection::LEFT), Some((3, 4)))
     }
 }
