@@ -105,8 +105,18 @@ impl NumberlinkBoard {
         self.last_used_affiliation = first_avail_affiliation;
     }
 
-    pub fn step(loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
-        todo!()
+    pub fn step(&self, loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
+        let new_loc = match direction {
+            BoardTraverseDirection::UP => (loc.0 + 0, loc.1 - 1),
+            BoardTraverseDirection::DOWN => (loc.0 + 0, loc.1 + 1),
+            BoardTraverseDirection::LEFT => (loc.0 - 1, loc.1 + 0),
+            BoardTraverseDirection::RIGHT => (loc.0 + 1, loc.1 + 0),
+        };
+
+        match (0..self.dims.0).contains(&new_loc.0) && (0..self.dims.1).contains(&new_loc.1) {
+            true => Some(new_loc),
+            false => None
+        }
     }
 }
 
