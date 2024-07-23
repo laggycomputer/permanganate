@@ -1,17 +1,4 @@
-// pub fn add(left: usize, right: usize) -> usize {
-//     left + right
-// }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn it_works() {
-//         let result = add(2, 2);
-//         assert_eq!(result, 4);
-//     }
-// }
+mod tests;
 
 use std::fmt::{Display, Formatter};
 use std::ops::IndexMut;
@@ -24,7 +11,7 @@ type Coord = usize;
 type Location = (Coord, Coord);
 type CellAffiliation = usize;
 
-enum BoardTraverseDirection {
+pub enum BoardTraverseDirection {
     UP,
     DOWN,
     LEFT,
@@ -76,12 +63,12 @@ pub struct NumberlinkBoard {
 
 impl Default for NumberlinkBoard {
     fn default() -> Self {
-        Self::new((5, 5))
+        Self::with_dims((5, 5))
     }
 }
 
 impl NumberlinkBoard {
-    pub fn new(dims: Location) -> NumberlinkBoard {
+    pub fn with_dims(dims: Location) -> NumberlinkBoard {
         NumberlinkBoard {
             dims,
             // row major
