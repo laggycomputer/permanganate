@@ -1,0 +1,8 @@
+[package]
+name = "permanganate"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ndarray = "0.15.6"
+unordered-pair = "0.2.5"
