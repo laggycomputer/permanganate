@@ -10,7 +10,13 @@ mod tests;
 type Coord = usize;
 // x, y
 type Location = (Coord, Coord);
-type CellAffiliation = usize;
+type AffiliationID = usize;
+
+#[derive(Clone, Copy, Debug)]
+struct CellAffiliation {
+    ident: AffiliationID,
+    display: char,
+}
 
 pub enum BoardTraverseDirection {
     UP,
@@ -28,20 +34,11 @@ pub enum NumberlinkCell {
     EMPTY,
 }
 
-const PATH_CHARS: [char; 26] = [
-    'a', 'b', 'c', 'd', 'e',
-    'f', 'g', 'h', 'i', 'j',
-    'k', 'l', 'm', 'n', 'o',
-    'p', 'q', 'r', 's', 't',
-    'u', 'v', 'w', 'x', 'y',
-    'z',
-];
-
 impl Display for NumberlinkCell {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            NumberlinkCell::TERMINUS { affiliation } => PATH_CHARS[*affiliation].to_ascii_uppercase(),
-            NumberlinkCell::PATH { affiliation } => PATH_CHARS[*affiliation],
+            NumberlinkCell::TERMINUS { affiliation } => affiliation.display.to_ascii_uppercase(),
+            NumberlinkCell::PATH { affiliation } => affiliation.display,
             NumberlinkCell::EMPTY => '.'
         })
     }
@@ -51,7 +48,7 @@ impl Display for NumberlinkCell {
 pub struct NumberlinkBoard {
     dims: Location,
     cells: Array2<NumberlinkCell>,
-    last_used_affiliation: Option<CellAffiliation>,
+    last_used_aff_ident: Option<AffiliationID>,
 }
 
 impl Default for NumberlinkBoard {
@@ -66,33 +63,39 @@ impl NumberlinkBoard {
             dims,
             // row major
             cells: Array2::from_shape_simple_fn((dims.1, dims.0), NumberlinkCell::default),
-            last_used_affiliation: None,
+            last_used_aff_ident: None,
         }
     }
 
-    pub fn add_endpoints(&mut self, locations: UnorderedPair<Location>) -> Result<CellAffiliation, Err> {
-        let first_avail_affiliation = match self.last_used_affiliation {
+    fn next_avail_aff_ident(&self) -> AffiliationID {
+        match self.last_used_aff_ident {
             None => 0,
             Some(aff) => aff + 1
-        };
-        for endpoint in [locations.0, locations.1] {
-            self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS { affiliation: first_avail_affiliation })
         }
-        self.last_used_affiliation = Some(first_avail_affiliation);
-
-        return Ok(first_avail_affiliation);
     }
 
-    pub fn add_endpoints_with_affiliation(&mut self, wanted_affiliation: CellAffiliation, locations: UnorderedPair<Location>) -> Result<CellAffiliation, Err> {
-        // this check is really loose but meh
-        if self.last_used_affiliation.is_none() || self.last_used_affiliation.is_some_and(|aff| aff < wanted_affiliation) {
-            for endpoint in [locations.0, locations.1] {
-                self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS { affiliation: wanted_affiliation })
-            }
-            Ok(wanted_affiliation)
-        } else {
-            Err("affiliation already in use")
+    pub fn add_termini(&mut self, locations: UnorderedPair<Location>) {
+        self._add_termini(
+            self.next_avail_aff_ident(),
+            ('A' as usize + self.next_avail_aff_ident()) as u8 as char,
+            locations)
+    }
+
+    pub fn add_termini_with_display(&mut self, display: char, locations: UnorderedPair<Location>) {
+        self._add_termini(
+            self.next_avail_aff_ident(),
+            display,
+            locations)
+    }
+
+    fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
+        for endpoint in [locations.0, locations.1] {
+            self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS {
+                affiliation: CellAffiliation { ident: aff_id, display }
+            })
         }
+
+        self.last_used_aff_ident = Some(aff_id);
     }
 
     pub fn step(&self, loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
