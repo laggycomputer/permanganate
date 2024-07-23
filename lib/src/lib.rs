@@ -24,11 +24,17 @@ type Coord = usize;
 type Location = (Coord, Coord);
 type CellAffiliation = usize;
 
+enum BoardTraverseDirection {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    // switch it up like nintendo
+}
+
 #[derive(Copy, Clone)]
 pub struct NumberlinkCell {
     affiliation: Option<CellAffiliation>,
-    // up, down, left, right (oh, switch it up like nintendo)
-    connections: (bool, bool, bool, bool),
     is_terminus: bool,
 }
 
@@ -36,7 +42,6 @@ impl Default for NumberlinkCell {
     fn default() -> Self {
         Self {
             affiliation: None,
-            connections: (false, false, false, false),
             is_terminus: false,
         }
     }
@@ -95,6 +100,10 @@ impl NumberlinkBoard {
             })
         }
         self.last_used_affiliation = first_avail_affiliation;
+    }
+
+    pub fn step(loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
+        todo!()
     }
 }
 
