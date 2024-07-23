@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::ops::IndexMut;
+use std::ops::{AddAssign, IndexMut};
 
 use ndarray::{Array2, AssignElem};
 use unordered_pair::UnorderedPair;
@@ -46,6 +47,7 @@ impl Display for NumberlinkCell {
     }
 }
 
+#[derive(Clone)]
 pub struct NumberlinkBoard {
     dims: Location,
     cells: Array2<NumberlinkCell>,
@@ -68,7 +70,7 @@ impl NumberlinkBoard {
         }
     }
 
-    pub fn add_endpoints(&mut self, locations: UnorderedPair<Location>) {
+    pub fn add_endpoints(&mut self, locations: UnorderedPair<Location>) -> Result<CellAffiliation, Err> {
         let first_avail_affiliation = match self.last_used_affiliation {
             None => 0,
             Some(aff) => aff + 1
@@ -77,6 +79,20 @@ impl NumberlinkBoard {
             self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS { affiliation: first_avail_affiliation })
         }
         self.last_used_affiliation = Some(first_avail_affiliation);
+
+        return Ok(first_avail_affiliation);
+    }
+
+    pub fn add_endpoints_with_affiliation(&mut self, wanted_affiliation: CellAffiliation, locations: UnorderedPair<Location>) -> Result<CellAffiliation, Err> {
+        // this check is really loose but meh
+        if self.last_used_affiliation.is_none() || self.last_used_affiliation.is_some_and(|aff| aff < wanted_affiliation) {
+            for endpoint in [locations.0, locations.1] {
+                self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS { affiliation: wanted_affiliation })
+            }
+            Ok(wanted_affiliation)
+        } else {
+            Err("affiliation already in use")
+        }
     }
 
     pub fn step(&self, loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
