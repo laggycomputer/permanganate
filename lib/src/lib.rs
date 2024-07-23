@@ -1,10 +1,10 @@
-mod tests;
-
 use std::fmt::{Display, Formatter};
 use std::ops::IndexMut;
 
 use ndarray::{Array2, AssignElem};
 use unordered_pair::UnorderedPair;
+
+mod tests;
 
 type Coord = usize;
 // x, y
@@ -19,19 +19,12 @@ pub enum BoardTraverseDirection {
     // switch it up like nintendo
 }
 
-#[derive(Copy, Clone)]
-pub struct NumberlinkCell {
-    affiliation: Option<CellAffiliation>,
-    is_terminus: bool,
-}
-
-impl Default for NumberlinkCell {
-    fn default() -> Self {
-        Self {
-            affiliation: None,
-            is_terminus: false,
-        }
-    }
+#[derive(Clone, Copy, Debug, Default)]
+pub enum NumberlinkCell {
+    TERMINUS { affiliation: CellAffiliation },
+    PATH { affiliation: CellAffiliation },
+    #[default]
+    EMPTY,
 }
 
 const PATH_CHARS: [char; 26] = [
@@ -45,12 +38,10 @@ const PATH_CHARS: [char; 26] = [
 
 impl Display for NumberlinkCell {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self.is_terminus {
-            true => PATH_CHARS[self.affiliation.unwrap()].to_ascii_uppercase(),
-            false => match self.affiliation {
-                Some(aff) => PATH_CHARS[aff],
-                None => '.'
-            }
+        write!(f, "{}", match self {
+            NumberlinkCell::TERMINUS { affiliation } => PATH_CHARS[*affiliation].to_ascii_uppercase(),
+            NumberlinkCell::PATH { affiliation } => PATH_CHARS[*affiliation],
+            NumberlinkCell::EMPTY => '.'
         })
     }
 }
@@ -78,18 +69,14 @@ impl NumberlinkBoard {
     }
 
     pub fn add_endpoints(&mut self, locations: UnorderedPair<Location>) {
-        let first_avail_affiliation = Some(match self.last_used_affiliation {
+        let first_avail_affiliation = match self.last_used_affiliation {
             None => 0,
             Some(aff) => aff + 1
-        });
+        };
         for endpoint in [locations.0, locations.1] {
-            self.cells.index_mut(endpoint).assign_elem(NumberlinkCell {
-                affiliation: first_avail_affiliation,
-                is_terminus: true,
-                ..Default::default()
-            })
+            self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS { affiliation: first_avail_affiliation })
         }
-        self.last_used_affiliation = first_avail_affiliation;
+        self.last_used_affiliation = Some(first_avail_affiliation);
     }
 
     pub fn step(&self, loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
