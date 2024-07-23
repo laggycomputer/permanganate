@@ -87,7 +87,6 @@ impl NumberlinkBoard {
 
     pub fn add_endpoints(&mut self, locations: UnorderedPair<Location>) {
         let first_avail_affiliation = Some(self.last_used_affiliation.unwrap_or_default() + 1);
-        self.last_used_affiliation = first_avail_affiliation;
         for endpoint in [locations.0, locations.1] {
             self.cells.index_mut(endpoint).assign_elem(NumberlinkCell {
                 affiliation: first_avail_affiliation,
@@ -95,6 +94,7 @@ impl NumberlinkBoard {
                 ..Default::default()
             })
         }
+        self.last_used_affiliation = first_avail_affiliation;
     }
 }
 
