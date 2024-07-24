@@ -23,4 +23,12 @@ mod tests {
         let board = NumberlinkBoard::with_dims((5, 5));
         assert_eq!(board.step((4, 4), BoardTraverseDirection::LEFT), Some((3, 4)))
     }
+
+    #[test]
+    fn num_affiliations() {
+        let mut board = NumberlinkBoard::with_dims((3, 5));
+        board.add_termini_with_display('A', UnorderedPair::from(((0, 0), (2, 4))));
+        board.add_termini_with_display('B', UnorderedPair::from(((0, 1), (2, 3))));
+        assert_eq!(board.num_affiliations(), 2)
+    }
 }
