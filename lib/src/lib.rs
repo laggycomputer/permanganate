@@ -2,11 +2,14 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 use std::ops::{AddAssign, IndexMut};
 
+use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Var};
+
 use crate::logic::exactly_one;
+
 mod tests;
 mod logic;
 
@@ -181,20 +184,28 @@ impl NumberlinkBoard {
                         // there exists exactly one neighbor with the same affiliation
                         clauses.extend(exactly_one(
                             self.neighbors_of(
-                            (col, row)).into_iter()
-                            .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
-                            .collect::<Vec<_>>()
+                                (col, row)).into_iter()
+                                .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
+                                .collect::<Vec<_>>()
                         ));
 
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
+                    }
+                    NumberlinkCell::EMPTY => {
+                        // this cell has exactly one affiliation
+                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(exactly_one(
+                            0..self.num_affiliations()
+                                .map(|aff_id| self.affiliation_var((col, row), aff_id))
+                                .collect_vec())));
+
+                        // todo: exactly two neighbors have this affiliation
+                        // todo: these same neighbors have no other affiliation
+                        // todo: the remaining 2 neighbors have a different affiliation
                     }
                     _ => {}
                 }
             }
         }
-
-        // build clauses for paths
-
         todo!();
     }
 }
