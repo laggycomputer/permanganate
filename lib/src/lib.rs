@@ -6,8 +6,9 @@ use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Var};
-
+use crate::logic::exactly_one;
 mod tests;
+mod logic;
 
 type Coord = usize;
 // x, y
@@ -169,13 +170,21 @@ impl NumberlinkBoard {
 
                         for aff_id in 0..self.num_affiliations() {
                             let var_here = self.affiliation_var((col, row), aff_id);
-                            clauses.push([match aff_id == affiliation_here.ident {
+                            clauses.push(vec![match aff_id == affiliation_here.ident {
                                 // this cell has the currently set affiliation...
                                 true => var_here.positive(),
                                 // and no other
                                 false => var_here.negative()
                             }])
                         }
+
+                        // there exists exactly one neighbor with the same affiliation
+                        clauses.extend(exactly_one(
+                            self.neighbors_of(
+                            (col, row)).into_iter()
+                            .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
+                            .collect::<Vec<_>>()
+                        ));
 
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
                     }
