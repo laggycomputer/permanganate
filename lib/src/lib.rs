@@ -24,7 +24,7 @@ struct CellAffiliation {
     display: char,
 }
 
-#[derive(Copy, Clone, VariantArray)]
+#[derive(Copy, Clone, Debug, Eq, Hash, VariantArray, PartialEq)]
 pub enum BoardTraverseDirection {
     UP,
     DOWN,
@@ -132,15 +132,17 @@ impl NumberlinkBoard {
         }
     }
 
-    pub fn neighbors_of(&self, loc: Location) -> HashSet<Location> {
-        let mut ret: HashSet<Location> = HashSet::with_capacity(4);
+    pub fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<BoardTraverseDirection>) {
+        let mut neighbor_locs: HashSet<Location> = HashSet::with_capacity(4);
+        let mut possible_directions: HashSet<BoardTraverseDirection> = HashSet::with_capacity(4);
         for dir in BoardTraverseDirection::VARIANTS {
             if let Some(neighbor_loc) = self.step(loc, *dir) {
-                ret.insert(neighbor_loc);
+                neighbor_locs.insert(neighbor_loc);
+                possible_directions.insert(*dir);
             }
         }
 
-        return ret;
+        return (neighbor_locs, possible_directions);
     }
 
     // check that every affiliation with termini has exactly 2 termini
@@ -164,7 +166,6 @@ impl NumberlinkBoard {
             return None;
         }
 
-        // build clauses for termini
         for row in 0..self.dims.1 {
             for col in 0..self.dims.0 {
                 match self.cells.get((row, col)).unwrap() {
@@ -183,8 +184,7 @@ impl NumberlinkBoard {
 
                         // there exists exactly one neighbor with the same affiliation
                         clauses.extend(exactly_one(
-                            self.neighbors_of(
-                                (col, row)).into_iter()
+                            self.neighbors_of((col, row)).0.into_iter()
                                 .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
                                 .collect::<Vec<_>>()
                         ));
@@ -194,7 +194,7 @@ impl NumberlinkBoard {
                     NumberlinkCell::EMPTY => {
                         // this cell has exactly one affiliation
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(exactly_one(
-                            0..self.num_affiliations()
+                            (0..self.num_affiliations())
                                 .map(|aff_id| self.affiliation_var((col, row), aff_id))
                                 .collect_vec())
                         ));

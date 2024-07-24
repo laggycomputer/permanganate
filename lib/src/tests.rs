@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use unordered_pair::UnorderedPair;
 
     use crate::{BoardTraverseDirection, NumberlinkBoard};
@@ -15,7 +16,7 @@ mod tests {
     #[test]
     fn step_invalid() {
         let board = NumberlinkBoard::with_dims((3, 3));
-        assert_eq!(board.step((0, 0), BoardTraverseDirection::UP), None);
+    assert_eq!(board.step((0, 0), BoardTraverseDirection::UP), None);
     }
 
     #[test]
@@ -35,18 +36,20 @@ mod tests {
     #[test]
     fn neighbors_of_corner() {
         let board = NumberlinkBoard::with_dims((3, 3));
-        assert_eq!(board.neighbors_of((0, 0)).len(), 2)
+        let (neighbor_locs, possible_directions) = board.neighbors_of((0, 0));
+        assert_eq!(neighbor_locs.len(), 2);
+        assert_eq!(possible_directions, HashSet::from([BoardTraverseDirection::DOWN, BoardTraverseDirection::RIGHT]));
     }
 
     #[test]
     fn neighbors_of_edge() {
         let board = NumberlinkBoard::with_dims((3, 3));
-        assert_eq!(board.neighbors_of((1, 0)).len(), 3)
+        assert_eq!(board.neighbors_of((1, 0)).0.len(), 3)
     }
 
     #[test]
     fn neighbors_of_surrounded() {
         let board = NumberlinkBoard::with_dims((3, 3));
-        assert_eq!(board.neighbors_of((1, 1)).len(), 4)
+        assert_eq!(board.neighbors_of((1, 1)).0.len(), 4)
     }
 }
