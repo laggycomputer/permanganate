@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 ndarray = "0.15.6"
 unordered-pair = "0.2.5"
+varisat = "0.2.2"

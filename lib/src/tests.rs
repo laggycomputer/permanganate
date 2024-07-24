@@ -8,7 +8,7 @@ mod tests {
     fn construct_basic_board() {
         let mut board = NumberlinkBoard::with_dims((3, 3));
         board.add_termini_with_display('A', UnorderedPair::from(((0, 0), (2, 2))));
-        board.add_termini(UnorderedPair::from(((1, 0), (1, 2))));
+        board.add_termini(UnorderedPair::from(((1, 0), (1 , 2))));
         assert_eq!(board.to_string(), "A..\nB.B\n..A\n")
     }
 

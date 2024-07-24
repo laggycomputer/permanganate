@@ -4,6 +4,7 @@ use std::ops::{AddAssign, IndexMut};
 
 use ndarray::{Array2, AssignElem};
 use unordered_pair::UnorderedPair;
+use varisat::{CnfFormula, Var};
 
 mod tests;
 
@@ -44,10 +45,10 @@ impl Display for NumberlinkCell {
     }
 }
 
-#[derive(Clone)]
 pub struct NumberlinkBoard {
     dims: Location,
     cells: Array2<NumberlinkCell>,
+    logic: Array2<CnfFormula>,
     last_used_aff_ident: Option<AffiliationID>,
 }
 
@@ -63,6 +64,7 @@ impl NumberlinkBoard {
             dims,
             // row major
             cells: Array2::from_shape_simple_fn((dims.1, dims.0), NumberlinkCell::default),
+            logic: Array2::from_shape_simple_fn((dims.1, dims.0), CnfFormula::default),
             last_used_aff_ident: None,
         }
     }
@@ -88,11 +90,23 @@ impl NumberlinkBoard {
             locations)
     }
 
+    pub fn num_affiliations(&self) -> usize {
+        // if ID n is used, then n+1 IDs exist
+        match self.last_used_aff_ident {
+            None => 0,
+            Some(aff_id) => aff_id + 1
+        }
+    }
+
+    fn var_ident(&self, location: Location, affiliation_id: AffiliationID) -> usize {
+        (location.1 * self.dims.1 + location.0) * self.num_affiliations() + affiliation_id
+    }
+
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
-        for endpoint in [locations.0, locations.1] {
-            self.cells.index_mut(endpoint).assign_elem(NumberlinkCell::TERMINUS {
+        for endpoint_loc in [locations.0, locations.1] {
+            self.cells.index_mut(endpoint_loc).assign_elem(NumberlinkCell::TERMINUS {
                 affiliation: CellAffiliation { ident: aff_id, display }
-            })
+            });
         }
 
         self.last_used_aff_ident = Some(aff_id);
@@ -110,6 +124,49 @@ impl NumberlinkBoard {
             true => Some(new_loc),
             false => None
         }
+    }
+
+    // check that every affiliation with termini has exactly 2 termini
+    pub fn is_valid_problem(&self) -> bool {
+        let mut found_termini: HashMap<AffiliationID, u8> = HashMap::new();
+        for cell in self.cells.iter() {
+            if let NumberlinkCell::TERMINUS { affiliation } = cell {
+                if let Some(count) = found_termini.get_mut(&affiliation.ident) {
+                    count.add_assign(1)
+                } else {
+                    found_termini.insert(affiliation.ident, 1);
+                }
+            }
+        }
+
+        return found_termini.into_values().all(|c| c == 2);
+    }
+
+    pub fn solve_bsat(&mut self) -> Option<NumberlinkBoard> {
+        if !self.is_valid_problem() || self.num_affiliations() == 0 {
+            return None;
+        }
+
+        // build clauses for termini
+        for row in 0..self.dims.1 {
+            for col in 0..self.dims.0 {
+                let mut clauses = Vec::with_capacity(self.num_affiliations());
+                let NumberlinkCell { affinity: correct_aff, .. } = self.cells.get((row, col));
+
+                for aff_id in 0..self.num_affiliations() {
+                    let clause = Var::from_index(self.var_ident((col, row), aff_id));
+                    clauses.push(match aff_id == correct_aff {
+                        true => clause.positive(),
+                        false => clause.negative()
+                    })
+                }
+                self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
+            }
+        }
+
+        // build clauses for paths
+
+        todo!();
     }
 }
 
