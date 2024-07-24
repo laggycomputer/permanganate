@@ -196,7 +196,8 @@ impl NumberlinkBoard {
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(exactly_one(
                             0..self.num_affiliations()
                                 .map(|aff_id| self.affiliation_var((col, row), aff_id))
-                                .collect_vec())));
+                                .collect_vec())
+                        ));
 
                         // todo: exactly two neighbors have this affiliation
                         // todo: these same neighbors have no other affiliation
