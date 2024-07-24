@@ -31,4 +31,22 @@ mod tests {
         board.add_termini_with_display('B', UnorderedPair::from(((0, 1), (2, 3))));
         assert_eq!(board.num_affiliations(), 2)
     }
+
+    #[test]
+    fn neighbors_of_corner() {
+        let board = NumberlinkBoard::with_dims((3, 3));
+        assert_eq!(board.neighbors_of((0, 0)).len(), 2)
+    }
+
+    #[test]
+    fn neighbors_of_edge() {
+        let board = NumberlinkBoard::with_dims((3, 3));
+        assert_eq!(board.neighbors_of((1, 0)).len(), 3)
+    }
+
+    #[test]
+    fn neighbors_of_surrounded() {
+        let board = NumberlinkBoard::with_dims((3, 3));
+        assert_eq!(board.neighbors_of((1, 1)).len(), 4)
+    }
 }

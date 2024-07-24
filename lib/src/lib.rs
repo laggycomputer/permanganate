@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 use std::ops::{AddAssign, IndexMut};
 
 use ndarray::{Array2, AssignElem};
+use strum::VariantArray;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Var};
 
@@ -19,6 +20,7 @@ struct CellAffiliation {
     display: char,
 }
 
+#[derive(Copy, Clone, VariantArray)]
 pub enum BoardTraverseDirection {
     UP,
     DOWN,
@@ -98,8 +100,8 @@ impl NumberlinkBoard {
         }
     }
 
-    fn var_ident(&self, location: Location, affiliation_id: AffiliationID) -> usize {
-        (location.1 * self.dims.1 + location.0) * self.num_affiliations() + affiliation_id
+    fn affiliation_var(&self, location: Location, affiliation_id: AffiliationID) -> Var {
+        Var::from_index((location.1 * self.dims.1 + location.0) * self.num_affiliations() + affiliation_id)
     }
 
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
@@ -124,6 +126,17 @@ impl NumberlinkBoard {
             true => Some(new_loc),
             false => None
         }
+    }
+
+    pub fn neighbors_of(&self, loc: Location) -> HashSet<Location> {
+        let mut ret: HashSet<Location> = HashSet::with_capacity(4);
+        for dir in BoardTraverseDirection::VARIANTS {
+            if let Some(neighbor_loc) = self.step(loc, *dir) {
+                ret.insert(neighbor_loc);
+            }
+        }
+
+        return ret;
     }
 
     // check that every affiliation with termini has exactly 2 termini
@@ -155,10 +168,12 @@ impl NumberlinkBoard {
                         let mut clauses = Vec::with_capacity(self.num_affiliations());
 
                         for aff_id in 0..self.num_affiliations() {
-                            let clause = Var::from_index(self.var_ident((col, row), aff_id));
+                            let var_here = self.affiliation_var((col, row), aff_id);
                             clauses.push([match aff_id == affiliation_here.ident {
-                                true => clause.positive(),
-                                false => clause.negative()
+                                // this cell has the currently set affiliation...
+                                true => var_here.positive(),
+                                // and no other
+                                false => var_here.negative()
                             }])
                         }
 
