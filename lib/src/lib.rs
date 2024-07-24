@@ -28,7 +28,7 @@ pub enum BoardTraverseDirection {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub enum NumberlinkCell {
+pub(crate) enum NumberlinkCell {
     TERMINUS { affiliation: CellAffiliation },
     PATH { affiliation: CellAffiliation },
     #[default]
@@ -104,7 +104,7 @@ impl NumberlinkBoard {
 
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
         for endpoint_loc in [locations.0, locations.1] {
-            self.cells.index_mut(endpoint_loc).assign_elem(NumberlinkCell::TERMINUS {
+            self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
                 affiliation: CellAffiliation { ident: aff_id, display }
             });
         }
@@ -150,17 +150,22 @@ impl NumberlinkBoard {
         // build clauses for termini
         for row in 0..self.dims.1 {
             for col in 0..self.dims.0 {
-                let mut clauses = Vec::with_capacity(self.num_affiliations());
-                let NumberlinkCell { affinity: correct_aff, .. } = self.cells.get((row, col));
+                match self.cells.get((row, col)).unwrap() {
+                    NumberlinkCell::TERMINUS { affiliation: affiliation_here } => {
+                        let mut clauses = Vec::with_capacity(self.num_affiliations());
 
-                for aff_id in 0..self.num_affiliations() {
-                    let clause = Var::from_index(self.var_ident((col, row), aff_id));
-                    clauses.push(match aff_id == correct_aff {
-                        true => clause.positive(),
-                        false => clause.negative()
-                    })
+                        for aff_id in 0..self.num_affiliations() {
+                            let clause = Var::from_index(self.var_ident((col, row), aff_id));
+                            clauses.push(match aff_id == affiliation_here.ident {
+                                true => clause.positive(),
+                                false => clause.negative()
+                            })
+                        }
+
+                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(vec![clauses]))
+                    }
+                    _ => {}
                 }
-                self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
             }
         }
 
