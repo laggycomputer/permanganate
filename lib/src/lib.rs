@@ -156,13 +156,13 @@ impl NumberlinkBoard {
 
                         for aff_id in 0..self.num_affiliations() {
                             let clause = Var::from_index(self.var_ident((col, row), aff_id));
-                            clauses.push(match aff_id == affiliation_here.ident {
+                            clauses.push([match aff_id == affiliation_here.ident {
                                 true => clause.positive(),
                                 false => clause.negative()
-                            })
+                            }])
                         }
 
-                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(vec![clauses]))
+                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
                     }
                     _ => {}
                 }
