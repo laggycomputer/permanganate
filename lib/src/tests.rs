@@ -55,9 +55,9 @@ mod tests {
 
     #[test]
     fn affiliation_var() {
-        let mut board = NumberlinkBoard::with_dims((3, 3));
+        let mut board = NumberlinkBoard::with_dims((3, 5));
         board.add_termini_with_display('A', UnorderedPair::from(((0, 0), (2, 2))));
         board.add_termini_with_display('B', UnorderedPair::from(((0, 1), (0, 2))));
-        assert_eq!(board.affiliation_var((2, 2), 1), Var::from_index(17));
+        assert_eq!(board.affiliation_var((2, 4), 1), Var::from_index(29));
     }
 }

@@ -105,7 +105,7 @@ impl NumberlinkBoard {
     }
 
     fn affiliation_var(&self, location: Location, affiliation_id: AffiliationID) -> Var {
-        Var::from_index((location.1 * self.dims.1 + location.0) * self.num_affiliations() + affiliation_id)
+        Var::from_index((location.1 * self.dims.0 + location.0) * self.num_affiliations() + affiliation_id)
     }
 
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
