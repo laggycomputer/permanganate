@@ -86,7 +86,7 @@ impl Display for NumberlinkCell {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
             NumberlinkCell::TERMINUS { affiliation } => affiliation.display.to_ascii_uppercase(),
-            NumberlinkCell::PATH { affiliation } => affiliation.display,
+            NumberlinkCell::PATH { affiliation } => affiliation.display.to_ascii_lowercase(),
             NumberlinkCell::EMPTY => '.'
         })
     }
