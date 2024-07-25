@@ -235,7 +235,7 @@ impl NumberlinkBoard {
                         clauses.extend(exactly_one(
                             self.neighbors_of((col, row)).0.into_iter()
                                 .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
-                                .collect::<Vec<_>>()
+                                .collect_vec()
                         ));
 
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
