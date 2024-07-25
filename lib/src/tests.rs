@@ -2,7 +2,7 @@
 mod tests {
     use std::collections::HashSet;
     use unordered_pair::UnorderedPair;
-
+    use varisat::Var;
     use crate::{BoardTraverseDirection, NumberlinkBoard};
 
     #[test]
@@ -51,5 +51,13 @@ mod tests {
     fn neighbors_of_surrounded() {
         let board = NumberlinkBoard::with_dims((3, 3));
         assert_eq!(board.neighbors_of((1, 1)).0.len(), 4)
+    }
+
+    #[test]
+    fn affiliation_var() {
+        let mut board = NumberlinkBoard::with_dims((3, 3));
+        board.add_termini_with_display('A', UnorderedPair::from(((0, 0), (2, 2))));
+        board.add_termini_with_display('B', UnorderedPair::from(((0, 1), (0, 2))));
+        assert_eq!(board.affiliation_var((2, 2), 1), Var::from_index(17));
     }
 }
