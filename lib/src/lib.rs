@@ -33,6 +33,47 @@ pub enum BoardTraverseDirection {
     // switch it up like nintendo
 }
 
+impl BoardTraverseDirection {
+    fn is_part_of(&self, path_shape: &PathShape) -> bool {
+        match self {
+            BoardTraverseDirection::UP => vec![PathShape::UPDOWN, PathShape::UPLEFT, PathShape::UPRIGHT].contains(&path_shape),
+            BoardTraverseDirection::DOWN => vec![PathShape::UPDOWN, PathShape::DOWNLEFT, PathShape::DOWNRIGHT].contains(&path_shape),
+            BoardTraverseDirection::LEFT => vec![PathShape::LEFTRIGHT, PathShape::UPLEFT, PathShape::DOWNLEFT].contains(&path_shape),
+            BoardTraverseDirection::RIGHT => vec![PathShape::LEFTRIGHT, PathShape::UPRIGHT, PathShape::DOWNRIGHT].contains(&path_shape),
+        }
+    }
+}
+
+// a path cell has exactly 2 neighbors in one of these six ways; we order them to make declaring variables easier
+#[derive(VariantArray, PartialEq)]
+enum PathShape {
+    UPDOWN,
+    UPLEFT,
+    UPRIGHT,
+    DOWNLEFT,
+    DOWNRIGHT,
+    LEFTRIGHT,
+}
+
+impl PathShape {
+    fn possible_with(&self, possible_directions: &HashSet<BoardTraverseDirection>) -> bool {
+        match self {
+            PathShape::UPDOWN => possible_directions.contains(&BoardTraverseDirection::UP)
+                && possible_directions.contains(&BoardTraverseDirection::DOWN),
+            PathShape::UPLEFT => possible_directions.contains(&BoardTraverseDirection::UP)
+                && possible_directions.contains(&BoardTraverseDirection::LEFT),
+            PathShape::UPRIGHT => possible_directions.contains(&BoardTraverseDirection::UP)
+                && possible_directions.contains(&BoardTraverseDirection::RIGHT),
+            PathShape::DOWNLEFT => possible_directions.contains(&BoardTraverseDirection::DOWN)
+                && possible_directions.contains(&BoardTraverseDirection::LEFT),
+            PathShape::DOWNRIGHT => possible_directions.contains(&BoardTraverseDirection::DOWN)
+                && possible_directions.contains(&BoardTraverseDirection::RIGHT),
+            PathShape::LEFTRIGHT => possible_directions.contains(&BoardTraverseDirection::LEFT)
+                && possible_directions.contains(&BoardTraverseDirection::RIGHT),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) enum NumberlinkCell {
     TERMINUS { affiliation: CellAffiliation },
@@ -108,6 +149,18 @@ impl NumberlinkBoard {
         Var::from_index((location.1 * self.dims.0 + location.0) * self.num_affiliations() + affiliation_id)
     }
 
+    fn direction_var(&self, location: Location, path_shape: PathShape) -> Var {
+        Var::from_index(
+            // highest possible affiliation var
+            self.dims.1 * self.dims.0 * self.num_affiliations()
+                // now, build new index
+                + (location.1 * self.dims.0 + location.0) * PathShape::VARIANTS.len()
+                + PathShape::VARIANTS.iter()
+                .find_position(|shape| **shape == path_shape)
+                .unwrap().0
+        )
+    }
+
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
         for endpoint_loc in [locations.0, locations.1] {
             self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
@@ -161,7 +214,7 @@ impl NumberlinkBoard {
         return found_termini.into_values().all(|c| c == 2);
     }
 
-    pub fn solve_bsat(&mut self) -> Option<NumberlinkBoard> {
+    pub fn solve_bsat(mut self) -> Option<NumberlinkBoard> {
         if !self.is_valid_problem() || self.num_affiliations() == 0 {
             return None;
         }
@@ -193,13 +246,27 @@ impl NumberlinkBoard {
                             (0..=self.last_used_aff_ident.unwrap())
                                 .map(|aff_id| self.affiliation_var((col, row), aff_id))
                                 .collect_vec())
-                        ));
                         );
                         self.logic.index_mut((row, col)).assign_elem(formula);
 
-                        // todo: exactly two neighbors have this affiliation
-                        // todo: these same neighbors have no other affiliation
-                        // todo: the remaining 2 neighbors have a different affiliation
+                        // for each affinity this cell (cell A) may hold...
+                        for affinity in 0..=self.last_used_aff_ident.unwrap() {
+                            let (locations, directions) = self.neighbors_of((col, row));
+                            // for each neighbor of cell A, call it cell B...
+                            for (loc, direction) in locations.iter().zip(directions) {
+                                // for every possible path shape S on cell A...
+                                for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
+                                    if direction.is_part_of(path_shape) {
+                                        // for every S which includes cell B...
+                                        // then if cell A has shape S then cells A and B share an affiliation
+                                        // and if cell A does not have shape S then cells A and B have distinct affiliations
+                                    } else {
+                                        // if path shape S which does not include cell B...
+                                        // then A having shape S (false) implies A and B have distinct affiliations (true, so the whole statement holds)
+                                    }
+                                }
+                            }
+                        }
                     }
                     _ => {}
                 }
