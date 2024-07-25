@@ -5,7 +5,6 @@ use std::ops::{AddAssign, IndexMut};
 use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
-use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Solver, Var};
 
 use crate::logic::exactly_one;
@@ -125,14 +124,14 @@ impl NumberlinkBoard {
         }
     }
 
-    pub fn add_termini(&mut self, locations: UnorderedPair<Location>) {
+    pub fn add_termini(&mut self, locations: (Location, Location)) {
         self._add_termini(
             self.next_avail_aff_ident(),
             ('A' as usize + self.next_avail_aff_ident()) as u8 as char,
             locations)
     }
 
-    pub fn add_termini_with_display(&mut self, display: char, locations: UnorderedPair<Location>) {
+    pub fn add_termini_with_display(&mut self, display: char, locations: (Location, Location)) {
         self._add_termini(
             self.next_avail_aff_ident(),
             display,
@@ -163,8 +162,8 @@ impl NumberlinkBoard {
         )
     }
 
-    fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: UnorderedPair<Location>) {
-        for endpoint_loc in [locations.0, locations.1] {
+    fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: (Location, Location)) {
+        for endpoint_loc in locations {
             self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
                 affiliation: CellAffiliation { ident: aff_id, display }
             });
@@ -308,7 +307,7 @@ impl NumberlinkBoard {
         for (index, cell) in self.cells.indexed_iter() {
             let location = (index.1, index.0);
             match cell {
-                NumberlinkCell::TERMINUS {affiliation: _} => {
+                NumberlinkCell::TERMINUS { affiliation: _ } => {
                     new_board.cells.index_mut(index).assign_elem(*cell);
                 }
                 NumberlinkCell::EMPTY => {
