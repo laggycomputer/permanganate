@@ -6,7 +6,7 @@ use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use unordered_pair::UnorderedPair;
-use varisat::{CnfFormula, Var};
+use varisat::{CnfFormula, Solver, Var};
 
 use crate::logic::exactly_one;
 
@@ -294,6 +294,12 @@ impl NumberlinkBoard {
                 }
             }
         }
+
+        let mut solver = Solver::new();
+        self.logic.iter().for_each(|formula| solver.add_formula(formula));
+        solver.solve().unwrap();
+        let solved = solver.model().unwrap();
+        println!("{solved:?}");
 
         todo!()
     }
