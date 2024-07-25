@@ -254,13 +254,13 @@ impl NumberlinkBoard {
                         for affiliation in 0..=self.last_used_aff_ident.unwrap() {
                             let (locations, directions) = self.neighbors_of((col, row));
                             // for each neighbor of cell A, call it cell B...
-                            for (neighbor_loc, direction) in locations.iter().zip(directions) {
+                            for (neighbor_loc, direction) in locations.iter().zip(directions.clone()) {
                                 // for every possible path shape S on cell A...
 
                                 for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
                                     // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
                                     let x = self.direction_var((row, col), *path_shape);
-                                    let y = self.affiliation_var(*(row, col), affiliation);
+                                    let y = self.affiliation_var((row, col), affiliation);
                                     let z = self.affiliation_var(*neighbor_loc, affiliation);
 
                                     if direction.is_part_of(path_shape) {
