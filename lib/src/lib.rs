@@ -174,12 +174,8 @@ impl NumberlinkBoard {
 
                         for aff_id in 0..self.num_affiliations() {
                             let var_here = self.affiliation_var((col, row), aff_id);
-                            clauses.push(vec![match aff_id == affiliation_here.ident {
-                                // this cell has the currently set affiliation...
-                                true => var_here.positive(),
-                                // and no other
-                                false => var_here.negative()
-                            }])
+                            // this cell has the correct affiliation and does not have any other affiliation
+                            clauses.push(vec![var_here.lit(aff_id == affiliation_here.ident)])
                         }
 
                         // there exists exactly one neighbor with the same affiliation
