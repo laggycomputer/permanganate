@@ -190,7 +190,7 @@ impl NumberlinkBoard {
                     NumberlinkCell::EMPTY => {
                         // this cell has exactly one affiliation
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(exactly_one(
-                            (0..self.num_affiliations())
+                            (0..=self.last_used_aff_ident.unwrap())
                                 .map(|aff_id| self.affiliation_var((col, row), aff_id))
                                 .collect_vec())
                         ));
