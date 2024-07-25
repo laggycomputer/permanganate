@@ -10,6 +10,7 @@ pub(crate) fn exactly_one(vars: Vec<Var>) -> Vec<Vec<Lit>> {
     clauses.extend(vars.iter()
         .combinations(2)
         .map(|pair| vec![pair.index(0).negative(), pair.index(1).negative()])
+        .collect_vec()
     );
     // at least one var is true; A + B + C + ...
     clauses.push(vars.iter().map(|v| v.positive()).collect_vec());
