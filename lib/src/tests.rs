@@ -16,7 +16,7 @@ mod tests {
     #[test]
     fn step_invalid() {
         let board = NumberlinkBoard::with_dims((3, 3));
-    assert_eq!(board.step((0, 0), BoardTraverseDirection::UP), None);
+        assert_eq!(board.step((0, 0), BoardTraverseDirection::UP), None);
     }
 
     #[test]
