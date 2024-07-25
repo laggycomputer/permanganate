@@ -97,6 +97,7 @@ pub struct NumberlinkBoard {
     cells: Array2<NumberlinkCell>,
     logic: Array2<CnfFormula>,
     last_used_aff_ident: Option<AffiliationID>,
+    affiliation_displays: HashMap<AffiliationID, char>,
 }
 
 impl Default for NumberlinkBoard {
@@ -113,6 +114,7 @@ impl NumberlinkBoard {
             cells: Array2::from_shape_simple_fn((dims.1, dims.0), NumberlinkCell::default),
             logic: Array2::from_shape_simple_fn((dims.1, dims.0), CnfFormula::default),
             last_used_aff_ident: None,
+            affiliation_displays: HashMap::new(),
         }
     }
 
@@ -167,6 +169,8 @@ impl NumberlinkBoard {
                 affiliation: CellAffiliation { ident: aff_id, display }
             });
         }
+
+        self.affiliation_displays.insert(aff_id, display);
 
         self.last_used_aff_ident = Some(aff_id);
     }
@@ -298,9 +302,33 @@ impl NumberlinkBoard {
         self.logic.iter().for_each(|formula| solver.add_formula(formula));
         solver.solve().unwrap();
         let solved = solver.model().unwrap();
-        println!("{solved:?}");
 
-        todo!()
+        let mut new_board = Self::with_dims(self.dims);
+
+        for (index, cell) in self.cells.indexed_iter() {
+            let location = (index.1, index.0);
+            match cell {
+                NumberlinkCell::TERMINUS {affiliation: _} => {
+                    new_board.cells.index_mut(index).assign_elem(*cell);
+                }
+                NumberlinkCell::EMPTY => {
+                    let solved_affiliation = (0..=self.last_used_aff_ident.unwrap())
+                        .find(|aff| {
+                            let var = self.affiliation_var(location, *aff);
+                            solved.get(var.index()).unwrap().is_positive()
+                        }).unwrap();
+                    new_board.cells.index_mut(index).assign_elem(NumberlinkCell::PATH {
+                        affiliation: CellAffiliation {
+                            ident: solved_affiliation,
+                            display: *self.affiliation_displays.get(&solved_affiliation).unwrap(),
+                        }
+                    })
+                }
+                _ => {}
+            }
+        }
+
+        Some(new_board)
     }
 }
 

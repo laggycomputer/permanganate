@@ -9,5 +9,6 @@ fn main() {
     board.add_termini(UnorderedPair::from(((2, 0), (2, 2))));
 
     println!("{board}");
-    let solved = board.solve_bsat();
+    let solved = board.solve_bsat().unwrap();
+    println!("{solved}");
 }
