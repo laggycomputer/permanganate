@@ -45,7 +45,7 @@ impl BoardTraverseDirection {
 }
 
 // a path cell has exactly 2 neighbors in one of these six ways; we order them to make declaring variables easier
-#[derive(VariantArray, PartialEq)]
+#[derive(Copy, Clone, VariantArray, PartialEq)]
 enum PathShape {
     UPDOWN,
     UPLEFT,
@@ -241,38 +241,61 @@ impl NumberlinkBoard {
                         self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
                     }
                     NumberlinkCell::EMPTY => {
+                        let mut clauses = Vec::new();
+
                         // this cell has exactly one affiliation
-                        let formula = CnfFormula::from(exactly_one(
+                        clauses.extend(exactly_one(
                             (0..=self.last_used_aff_ident.unwrap())
                                 .map(|aff_id| self.affiliation_var((col, row), aff_id))
                                 .collect_vec())
                         );
-                        self.logic.index_mut((row, col)).assign_elem(formula);
 
-                        // for each affinity this cell (cell A) may hold...
-                        for affinity in 0..=self.last_used_aff_ident.unwrap() {
+                        // for each affiliation this cell (cell A) may hold...
+                        for affiliation in 0..=self.last_used_aff_ident.unwrap() {
                             let (locations, directions) = self.neighbors_of((col, row));
                             // for each neighbor of cell A, call it cell B...
-                            for (loc, direction) in locations.iter().zip(directions) {
+                            for (neighbor_loc, direction) in locations.iter().zip(directions) {
                                 // for every possible path shape S on cell A...
+
                                 for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
+                                    // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
+                                    let x = self.direction_var((row, col), *path_shape);
+                                    let y = self.affiliation_var(*(row, col), affiliation);
+                                    let z = self.affiliation_var(*neighbor_loc, affiliation);
+
                                     if direction.is_part_of(path_shape) {
-                                        // for every S which includes cell B...
-                                        // then if cell A has shape S then cells A and B share an affiliation
-                                        // and if cell A does not have shape S then cells A and B have distinct affiliations
+                                        /*
+                                        when cell B is on shape S, Y must equal Z
+                                        we seek X => Y*Z + !Y*!Z
+                                        law of excluded middle:
+                                        = X => (!Y*Y + Y*Z + !Y*!Z + !Z*Z)
+                                        factor:
+                                        X => (Y + -Z) * (-Y + Z)
+                                        by definition of imply:
+                                        = (!X + Y + -Z) * (!X + -Y + Z)
+                                        */
+
+                                        clauses.extend(vec![
+                                            vec![x.negative(), y.positive(), z.negative()],
+                                            vec![x.negative(), y.negative(), z.positive()],
+                                        ])
                                     } else {
-                                        // if path shape S which does not include cell B...
-                                        // then A having shape S (false) implies A and B have distinct affiliations (true, so the whole statement holds)
+                                        // if cell B is not on shape S, then X => Y != Z
+                                        // (A must have exactly one shape)
+                                        clauses.push(vec![x.negative(), y.negative(), z.negative()])
                                     }
                                 }
                             }
                         }
+
+                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses));
                     }
                     _ => {}
                 }
             }
         }
-        todo!();
+
+        todo!()
     }
 }
 
