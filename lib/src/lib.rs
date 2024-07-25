@@ -219,79 +219,78 @@ impl NumberlinkBoard {
             return None;
         }
 
-        for row in 0..self.dims.1 {
-            for col in 0..self.dims.0 {
-                match self.cells.get((row, col)).unwrap() {
-                    NumberlinkCell::TERMINUS { affiliation: affiliation_here } => {
-                        let mut clauses = Vec::with_capacity(self.num_affiliations());
+        for (index, cell) in self.cells.indexed_iter() {
+            let location = (index.1, index.0);
+            match cell {
+                NumberlinkCell::TERMINUS { affiliation: affiliation_here } => {
+                    let mut clauses = Vec::with_capacity(self.num_affiliations());
 
-                        for aff_id in 0..self.num_affiliations() {
-                            let var_here = self.affiliation_var((col, row), aff_id);
-                            // this cell has the correct affiliation and does not have any other affiliation
-                            clauses.push(vec![var_here.lit(aff_id == affiliation_here.ident)])
-                        }
-
-                        // there exists exactly one neighbor with the same affiliation
-                        clauses.extend(exactly_one(
-                            self.neighbors_of((col, row)).0.into_iter()
-                                .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
-                                .collect_vec()
-                        ));
-
-                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses))
+                    for aff_id in 0..self.num_affiliations() {
+                        let var_here = self.affiliation_var(location, aff_id);
+                        // this cell has the correct affiliation and does not have any other affiliation
+                        clauses.push(vec![var_here.lit(aff_id == affiliation_here.ident)])
                     }
-                    NumberlinkCell::EMPTY => {
-                        let mut clauses = Vec::new();
 
-                        // this cell has exactly one affiliation
-                        clauses.extend(exactly_one(
-                            (0..=self.last_used_aff_ident.unwrap())
-                                .map(|aff_id| self.affiliation_var((col, row), aff_id))
-                                .collect_vec())
-                        );
+                    // there exists exactly one neighbor with the same affiliation
+                    clauses.extend(exactly_one(
+                        self.neighbors_of(location).0.into_iter()
+                            .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
+                            .collect_vec()
+                    ));
 
-                        // for each affiliation this cell (cell A) may hold...
-                        for affiliation in 0..=self.last_used_aff_ident.unwrap() {
-                            let (locations, directions) = self.neighbors_of((col, row));
-                            // for each neighbor of cell A, call it cell B...
-                            for (neighbor_loc, direction) in locations.iter().zip(directions.clone()) {
-                                // for every possible path shape S on cell A...
+                    self.logic.index_mut(index).assign_elem(CnfFormula::from(clauses))
+                }
+                NumberlinkCell::EMPTY => {
+                    let mut clauses = Vec::new();
 
-                                for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
-                                    // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
-                                    let x = self.direction_var((row, col), *path_shape);
-                                    let y = self.affiliation_var((row, col), affiliation);
-                                    let z = self.affiliation_var(*neighbor_loc, affiliation);
+                    // this cell has exactly one affiliation
+                    clauses.extend(exactly_one(
+                        (0..=self.last_used_aff_ident.unwrap())
+                            .map(|aff_id| self.affiliation_var(location, aff_id))
+                            .collect_vec())
+                    );
 
-                                    if direction.is_part_of(path_shape) {
-                                        /*
-                                        when cell B is on shape S, Y must equal Z
-                                        we seek X => Y*Z + !Y*!Z
-                                        law of excluded middle:
-                                        = X => (!Y*Y + Y*Z + !Y*!Z + !Z*Z)
-                                        factor:
-                                        X => (Y + -Z) * (-Y + Z)
-                                        by definition of imply:
-                                        = (!X + Y + -Z) * (!X + -Y + Z)
-                                        */
+                    // for each affiliation this cell (cell A) may hold...
+                    for affiliation in 0..=self.last_used_aff_ident.unwrap() {
+                        let (locations, directions) = self.neighbors_of(location);
+                        // for each neighbor of cell A, call it cell B...
+                        for (neighbor_location, direction) in locations.iter().zip(directions.clone()) {
+                            // for every possible path shape S on cell A...
 
-                                        clauses.extend(vec![
-                                            vec![x.negative(), y.positive(), z.negative()],
-                                            vec![x.negative(), y.negative(), z.positive()],
-                                        ])
-                                    } else {
-                                        // if cell B is not on shape S, then X => Y != Z
-                                        // (A must have exactly one shape)
-                                        clauses.push(vec![x.negative(), y.negative(), z.negative()])
-                                    }
+                            for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
+                                // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
+                                let x = self.direction_var(location, *path_shape);
+                                let y = self.affiliation_var(location, affiliation);
+                                let z = self.affiliation_var(*neighbor_location, affiliation);
+
+                                if direction.is_part_of(path_shape) {
+                                    /*
+                                    when cell B is on shape S, Y must equal Z
+                                    we seek X => Y*Z + !Y*!Z
+                                    law of excluded middle:
+                                    = X => (!Y*Y + Y*Z + !Y*!Z + !Z*Z)
+                                    factor:
+                                    X => (Y + -Z) * (-Y + Z)
+                                    by definition of imply:
+                                    = (!X + Y + -Z) * (!X + -Y + Z)
+                                    */
+
+                                    clauses.extend(vec![
+                                        vec![x.negative(), y.positive(), z.negative()],
+                                        vec![x.negative(), y.negative(), z.positive()],
+                                    ])
+                                } else {
+                                    // if cell B is not on shape S, then X => Y != Z
+                                    // (A must have exactly one shape)
+                                    clauses.push(vec![x.negative(), y.negative(), z.negative()])
                                 }
                             }
                         }
-
-                        self.logic.index_mut((row, col)).assign_elem(CnfFormula::from(clauses));
                     }
-                    _ => {}
+
+                    self.logic.index_mut(index).assign_elem(CnfFormula::from(clauses));
                 }
+                _ => {}
             }
         }
 
