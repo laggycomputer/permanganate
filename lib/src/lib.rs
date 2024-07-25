@@ -163,7 +163,7 @@ impl NumberlinkBoard {
     }
 
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: (Location, Location)) {
-        for endpoint_loc in locations {
+        for endpoint_loc in [locations.0, locations.1] {
             self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
                 affiliation: CellAffiliation { ident: aff_id, display }
             });
