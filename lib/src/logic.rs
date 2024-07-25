@@ -6,7 +6,7 @@ use varisat::{Lit, Var};
 pub(crate) fn exactly_one(vars: Vec<Var>) -> Vec<Vec<Lit>> {
     let mut clauses = Vec::with_capacity(vars.len() * (vars.len() + 1) / 2 + 1);
 
-    // no two are true; (-A + -B) * (-A + -C) * ...
+    // no two are true; (!A + !B) * (!A + !C) * ...
     clauses.extend(vars.iter()
         .combinations(2)
         .map(|pair| vec![pair.index(0).negative(), pair.index(1).negative()])
