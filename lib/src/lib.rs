@@ -266,8 +266,8 @@ impl NumberlinkBoard {
                     'shape: for path_shape in PathShape::VARIANTS.iter() {
                         // let X be the statement "cell A has shape S"
                         let x = self.shape_var(location, *path_shape);
-                        // this path shape would imply A connects with cells not on the grid; impossible!
                         if !path_shape.possible_with(&directions) {
+                            // this path shape would imply A connects with cells not on the grid; impossible!
                             assumptions.push(x.negative());
                             continue 'shape;
                         }
