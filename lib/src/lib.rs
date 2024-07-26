@@ -222,6 +222,8 @@ impl NumberlinkBoard {
             return None;
         }
 
+        let mut assumptions = Vec::new();
+
         for (index, cell) in self.cells.indexed_iter() {
             let location = (index.1, index.0);
             match cell {
@@ -231,7 +233,7 @@ impl NumberlinkBoard {
                     for aff_id in 0..self.num_affiliations() {
                         let var_here = self.affiliation_var(location, aff_id);
                         // this cell has the correct affiliation and does not have any other affiliation
-                        clauses.push(vec![var_here.lit(aff_id == affiliation_here.ident)])
+                        assumptions.push(var_here.lit(aff_id == affiliation_here.ident));
                     }
 
                     // there exists exactly one neighbor with the same affiliation
@@ -299,6 +301,7 @@ impl NumberlinkBoard {
 
         let mut solver = Solver::new();
         self.logic.iter().for_each(|formula| solver.add_formula(formula));
+        solver.assume(assumptions.as_slice());
         solver.solve().unwrap();
         let solved = solver.model().unwrap();
 
