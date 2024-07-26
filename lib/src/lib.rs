@@ -215,7 +215,7 @@ impl NumberlinkBoard {
         return found_termini.into_values().all(|c| c == 2);
     }
 
-    pub fn solve_bsat(mut self) -> Option<NumberlinkBoard> {
+    pub fn solve_bsat(&self) -> Option<NumberlinkBoard> {
         if !self.is_valid_problem() || self.num_affiliations() == 0 {
             return None;
         }
