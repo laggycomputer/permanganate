@@ -65,8 +65,8 @@ mod tests {
     #[test]
     fn solve_board() {
         {
-            let mut board = NumberlinkBoard::with_dims((5, 5));
             // flow free classic pack level 1
+            let mut board = NumberlinkBoard::with_dims((5, 5));
             board.add_termini_with_display('A', ((0, 0), (1, 4)));
             board.add_termini_with_display('B', ((2, 0), (1, 3)));
             board.add_termini_with_display('C', ((2, 1), (2, 4)));
@@ -82,8 +82,8 @@ aACEe
 "
             );
         }
+        // flow free extreme pack 2 12x12 level 13
         let mut board = NumberlinkBoard::with_dims((12, 12));
-        // flow free extreme pack 2 level 13
         board.add_termini_with_display('A', ((7, 4), (4, 11)));
         board.add_termini_with_display('B', ((6, 4), (5, 11)));
         board.add_termini_with_display('C', ((6, 6), (0, 11)));
