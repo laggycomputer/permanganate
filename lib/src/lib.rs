@@ -330,7 +330,14 @@ impl NumberlinkBoard {
                             ident: solved_affiliation,
                             display: *self.affiliation_displays.get(&solved_affiliation).unwrap(),
                         }
-                    })
+                    });
+
+                    // todo: eliminate cycles if found
+                    // println!("{:?}", PathShape::VARIANTS.iter()
+                    //     .find(|shape| {
+                    //         let var = self.shape_var(location, **shape);
+                    //         solved.get(var.index()).unwrap().is_positive()
+                    //     }))
                 }
                 _ => {}
             }
