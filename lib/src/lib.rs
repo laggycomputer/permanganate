@@ -262,22 +262,23 @@ impl NumberlinkBoard {
                     ));
 
                     let (locations, directions) = self.neighbors_of(location);
-                    // for each affiliation this cell (cell A) may hold...
-                    for affiliation in 0..=self.last_used_aff_ident.unwrap() {
-                        // for each neighbor of cell A, call it cell B...
-                        for (neighbor_location, direction) in locations.iter().zip(directions.clone()) {
-                            // for every possible path shape S on cell A...
-                            for path_shape in PathShape::VARIANTS.iter() {
-                                // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
-                                let x = self.shape_var(location, *path_shape);
+                    // for every possible path shape S on cell A...
+                    'shape: for path_shape in PathShape::VARIANTS.iter() {
+                        // let X be the statement "cell A has shape S"
+                        let x = self.shape_var(location, *path_shape);
+                        // this path shape would imply A connects with cells not on the grid; impossible!
+                        if !path_shape.possible_with(&directions) {
+                            assumptions.push(x.negative());
+                            continue 'shape;
+                        }
+
+                        // for each affiliation this cell (cell A) may hold...
+                        for affiliation in 0..=self.last_used_aff_ident.unwrap() {
+                            // for each neighbor of cell A, call it cell B...
+                            for (neighbor_location, direction) in locations.iter().zip(directions.clone()) {
+                                // let Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
                                 let y = self.affiliation_var(location, affiliation);
                                 let z = self.affiliation_var(*neighbor_location, affiliation);
-
-                                if !path_shape.possible_with(&directions) {
-                                    assumptions.push(x.negative());
-                                    continue
-                                }
-
                                 if direction.is_part_of(path_shape) {
                                     /*
                                     when cell B is on shape S, Y must equal Z
@@ -337,11 +338,11 @@ impl NumberlinkBoard {
                     });
 
                     // todo: eliminate cycles if found
-                    println!("{:?}", PathShape::VARIANTS.iter()
-                        .find(|shape| {
-                            let var = self.shape_var(location, **shape);
-                            solved.get(var.index()).unwrap().is_positive()
-                        }))
+                    // println!("{:?}", PathShape::VARIANTS.iter()
+                    //     .find(|shape| {
+                    //         let var = self.shape_var(location, **shape);
+                    //         solved.get(var.index()).unwrap().is_positive()
+                    //     }))
                 }
                 _ => {}
             }

@@ -79,19 +79,32 @@ abCdE
 abcde
 aBcDe
 aACEe
-"
-            );
+");
         }
-        // flow free extreme pack 2 12x12 level 13
-        let mut board = NumberlinkBoard::with_dims((12, 12));
-        board.add_termini_with_display('A', ((7, 4), (4, 11)));
-        board.add_termini_with_display('B', ((6, 4), (5, 11)));
-        board.add_termini_with_display('C', ((6, 6), (0, 11)));
-        board.add_termini_with_display('D', ((2, 2), (7, 3)));
-        board.add_termini_with_display('E', ((5, 4), (7, 11)));
-        board.add_termini_with_display('F', ((7, 2), (3, 8)));
-        board.add_termini_with_display('G', ((2, 8), (5, 10)));
-        println!("{}", board);
-        println!("{}", board.solve_bsat().unwrap())
+        {
+            // flow free extreme pack 2 12x12 level 13
+            let mut board = NumberlinkBoard::with_dims((12, 12));
+            board.add_termini_with_display('A', ((7, 4), (4, 11)));
+            board.add_termini_with_display('B', ((6, 4), (5, 11)));
+            board.add_termini_with_display('C', ((6, 6), (0, 11)));
+            board.add_termini_with_display('D', ((2, 2), (7, 3)));
+            board.add_termini_with_display('E', ((5, 4), (7, 11)));
+            board.add_termini_with_display('F', ((7, 2), (3, 8)));
+            board.add_termini_with_display('G', ((2, 8), (5, 10)));
+            let solved = board.solve_bsat().unwrap();
+            assert_eq!(format!("{}", solved), "ccccceeeeeee
+caaacebbbbbe
+caDacebFffbe
+cadacebDdfbe
+cadacEBAdfbe
+cadacccadfbe
+cadaaaCadfbe
+cadddaaadfbe
+caGFdddddfbe
+cagfffffffbe
+cagggGbbbbbe
+CaaaABbEeeee
+")
+        }
     }
 }
