@@ -94,7 +94,6 @@ impl Display for NumberlinkCell {
 pub struct NumberlinkBoard {
     dims: Location,
     cells: Array2<NumberlinkCell>,
-    logic: Array2<CnfFormula>,
     last_used_aff_ident: Option<AffiliationID>,
     affiliation_displays: HashMap<AffiliationID, char>,
 }
@@ -111,7 +110,6 @@ impl NumberlinkBoard {
             dims,
             // row major
             cells: Array2::from_shape_simple_fn((dims.1, dims.0), NumberlinkCell::default),
-            logic: Array2::from_shape_simple_fn((dims.1, dims.0), CnfFormula::default),
             last_used_aff_ident: None,
             affiliation_displays: HashMap::new(),
         }
@@ -222,6 +220,7 @@ impl NumberlinkBoard {
             return None;
         }
 
+        let mut logic = Array2::from_shape_simple_fn((self.dims.1, self.dims.0), CnfFormula::default);
         let mut assumptions = Vec::new();
 
         for (index, cell) in self.cells.indexed_iter() {
@@ -243,7 +242,7 @@ impl NumberlinkBoard {
                             .collect_vec()
                     ));
 
-                    self.logic.index_mut(index).assign_elem(CnfFormula::from(clauses))
+                    logic.index_mut(index).assign_elem(CnfFormula::from(clauses))
                 }
                 NumberlinkCell::EMPTY => {
                     let mut clauses = Vec::new();
@@ -299,14 +298,14 @@ impl NumberlinkBoard {
                         }
                     }
 
-                    self.logic.index_mut(index).assign_elem(CnfFormula::from(clauses));
+                    logic.index_mut(index).assign_elem(CnfFormula::from(clauses));
                 }
                 _ => {}
             }
         }
 
         let mut solver = Solver::new();
-        self.logic.iter().for_each(|formula| solver.add_formula(formula));
+        logic.iter().for_each(|formula| solver.add_formula(formula));
         solver.assume(assumptions.as_slice());
         solver.solve().unwrap();
         let solved = solver.model().unwrap();
