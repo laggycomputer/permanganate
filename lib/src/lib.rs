@@ -289,7 +289,7 @@ impl NumberlinkBoard {
                                         vec![x.negative(), y.negative(), z.positive()],
                                     ])
                                 } else {
-                                    // if cell B is not on shape S, then X => Y != Z
+                                    // if cell B is not on shape S, then X => !Y + !Z
                                     // (A must have exactly one shape)
                                     clauses.push(vec![x.negative(), y.negative(), z.negative()])
                                 }
