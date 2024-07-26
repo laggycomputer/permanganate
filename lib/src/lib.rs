@@ -44,7 +44,7 @@ impl BoardTraverseDirection {
 }
 
 // a path cell has exactly 2 neighbors in one of these six ways; we order them to make declaring variables easier
-#[derive(Copy, Clone, VariantArray, PartialEq)]
+#[derive(Copy, Clone, Debug, VariantArray, PartialEq)]
 enum PathShape {
     UPDOWN,
     UPLEFT,
@@ -150,7 +150,7 @@ impl NumberlinkBoard {
         Var::from_index((location.1 * self.dims.0 + location.0) * self.num_affiliations() + affiliation_id)
     }
 
-    fn direction_var(&self, location: Location, path_shape: PathShape) -> Var {
+    fn shape_var(&self, location: Location, path_shape: PathShape) -> Var {
         Var::from_index(
             // highest possible affiliation var
             self.dims.1 * self.dims.0 * self.num_affiliations()
@@ -255,18 +255,22 @@ impl NumberlinkBoard {
                             .collect_vec())
                     );
 
+                    let (locations, directions) = self.neighbors_of(location);
                     // for each affiliation this cell (cell A) may hold...
                     for affiliation in 0..=self.last_used_aff_ident.unwrap() {
-                        let (locations, directions) = self.neighbors_of(location);
                         // for each neighbor of cell A, call it cell B...
                         for (neighbor_location, direction) in locations.iter().zip(directions.clone()) {
                             // for every possible path shape S on cell A...
-
-                            for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
+                            'shape: for path_shape in PathShape::VARIANTS.iter() {
                                 // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
-                                let x = self.direction_var(location, *path_shape);
+                                let x = self.shape_var(location, *path_shape);
                                 let y = self.affiliation_var(location, affiliation);
                                 let z = self.affiliation_var(*neighbor_location, affiliation);
+
+                                if !path_shape.possible_with(&directions) {
+                                    assumptions.push(x.negative());
+                                    continue 'shape
+                                }
 
                                 if direction.is_part_of(path_shape) {
                                     /*
@@ -275,9 +279,9 @@ impl NumberlinkBoard {
                                     law of excluded middle:
                                     = X => (!Y*Y + Y*Z + !Y*!Z + !Z*Z)
                                     factor:
-                                    X => (Y + -Z) * (-Y + Z)
+                                    X => (Y + !Z) * (!Y + Z)
                                     by definition of imply:
-                                    = (!X + Y + -Z) * (!X + -Y + Z)
+                                    = (!X + Y + !Z) * (!X + !Y + Z)
                                     */
 
                                     clauses.extend(vec![
