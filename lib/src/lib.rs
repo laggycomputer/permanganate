@@ -252,8 +252,8 @@ impl NumberlinkBoard {
                     clauses.extend(exactly_one(
                         (0..=self.last_used_aff_ident.unwrap())
                             .map(|aff_id| self.affiliation_var(location, aff_id))
-                            .collect_vec())
-                    );
+                            .collect_vec()
+                    ));
 
                     let (locations, directions) = self.neighbors_of(location);
                     // for each affiliation this cell (cell A) may hold...
