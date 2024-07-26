@@ -61,4 +61,24 @@ mod tests {
         board.add_termini_with_display('B', ((0, 1), (0, 2)));
         assert_eq!(board.affiliation_var((2, 4), 1), Var::from_index(29));
     }
+
+    #[test]
+    fn solve_board() {
+        let mut board = NumberlinkBoard::with_dims((5, 5));
+        // flow free classic pack level 1
+        board.add_termini_with_display('A', ((0, 0), (1, 4)));
+        board.add_termini_with_display('B', ((2, 0), (1, 3)));
+        board.add_termini_with_display('C', ((2, 1), (2, 4)));
+        board.add_termini_with_display('D', ((4, 0), (3, 3)));
+        board.add_termini_with_display('E', ((4, 1), (3, 4)));
+
+        let solved = board.solve_bsat().unwrap();
+        assert_eq!(format!("{}", solved), "AbBdD
+abCdE
+abcde
+aBcDe
+aACEe
+"
+        )
+    }
 }
