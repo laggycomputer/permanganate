@@ -255,6 +255,13 @@ impl NumberlinkBoard {
                             .collect_vec()
                     ));
 
+                    // this cell has exactly one shape
+                    clauses.extend(exactly_one(
+                        PathShape::VARIANTS.iter()
+                            .map(|shape| self.shape_var(location, *shape))
+                            .collect_vec()
+                    ));
+
                     let (locations, directions) = self.neighbors_of(location);
                     // for each affiliation this cell (cell A) may hold...
                     for affiliation in 0..=self.last_used_aff_ident.unwrap() {
