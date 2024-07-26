@@ -261,16 +261,11 @@ impl NumberlinkBoard {
                         // for each neighbor of cell A, call it cell B...
                         for (neighbor_location, direction) in locations.iter().zip(directions.clone()) {
                             // for every possible path shape S on cell A...
-                            'shape: for path_shape in PathShape::VARIANTS.iter() {
+                            for path_shape in PathShape::VARIANTS.iter().filter(|shape| shape.possible_with(&directions)) {
                                 // let X be the statement "cell A has shape S", Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
                                 let x = self.shape_var(location, *path_shape);
                                 let y = self.affiliation_var(location, affiliation);
                                 let z = self.affiliation_var(*neighbor_location, affiliation);
-
-                                if !path_shape.possible_with(&directions) {
-                                    assumptions.push(x.negative());
-                                    continue 'shape
-                                }
 
                                 if direction.is_part_of(path_shape) {
                                     /*
