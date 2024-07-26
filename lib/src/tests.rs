@@ -64,21 +64,34 @@ mod tests {
 
     #[test]
     fn solve_board() {
-        let mut board = NumberlinkBoard::with_dims((5, 5));
-        // flow free classic pack level 1
-        board.add_termini_with_display('A', ((0, 0), (1, 4)));
-        board.add_termini_with_display('B', ((2, 0), (1, 3)));
-        board.add_termini_with_display('C', ((2, 1), (2, 4)));
-        board.add_termini_with_display('D', ((4, 0), (3, 3)));
-        board.add_termini_with_display('E', ((4, 1), (3, 4)));
+        {
+            let mut board = NumberlinkBoard::with_dims((5, 5));
+            // flow free classic pack level 1
+            board.add_termini_with_display('A', ((0, 0), (1, 4)));
+            board.add_termini_with_display('B', ((2, 0), (1, 3)));
+            board.add_termini_with_display('C', ((2, 1), (2, 4)));
+            board.add_termini_with_display('D', ((4, 0), (3, 3)));
+            board.add_termini_with_display('E', ((4, 1), (3, 4)));
 
-        let solved = board.solve_bsat().unwrap();
-        assert_eq!(format!("{}", solved), "AbBdD
+            let solved = board.solve_bsat().unwrap();
+            assert_eq!(format!("{}", solved), "AbBdD
 abCdE
 abcde
 aBcDe
 aACEe
 "
-        )
+            );
+        }
+        let mut board = NumberlinkBoard::with_dims((12, 12));
+        // flow free extreme pack 2 level 13
+        board.add_termini_with_display('A', ((7, 4), (4, 11)));
+        board.add_termini_with_display('B', ((6, 4), (5, 11)));
+        board.add_termini_with_display('C', ((6, 6), (0, 11)));
+        board.add_termini_with_display('D', ((2, 2), (7, 3)));
+        board.add_termini_with_display('E', ((5, 4), (7, 11)));
+        board.add_termini_with_display('F', ((7, 2), (3, 8)));
+        board.add_termini_with_display('G', ((2, 8), (5, 10)));
+        println!("{}", board);
+        println!("{}", board.solve_bsat().unwrap())
     }
 }
