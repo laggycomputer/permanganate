@@ -6,7 +6,7 @@ use crate::common::location::Location;
 pub trait Step {
     fn attempt_from(&self, location: Location) -> Location;
     // directions which result in an index increase in a 2d array representation
-    fn forward_edge_directions(&self) -> &[Self]
+    fn forward_edge_directions() -> &'static [Self]
     where
         Self: Sized;
     fn invert(&self) -> Self;
@@ -31,7 +31,7 @@ impl Step for SquareStep {
         }
     }
 
-    fn forward_edge_directions(&self) -> &[Self]
+    fn forward_edge_directions() -> &'static [Self]
     where
         Self: Sized,
     {
@@ -76,7 +76,7 @@ impl Step for HexStep {
         }
     }
 
-    fn forward_edge_directions(&self) -> &[Self]
+    fn forward_edge_directions() -> &'static [Self]
     where
         Self: Sized,
     {
@@ -120,7 +120,7 @@ where
     }
 
     fn ensure_forward(&self) -> Self {
-        match self.forward_edge_directions().contains(self) {
+        match Self::forward_edge_directions().contains(self) {
             true => *self,
             false => self.invert(),
         }

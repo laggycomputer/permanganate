@@ -1,8 +1,10 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::ops::{IndexMut, Range};
-
+use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
+use strum::VariantArray;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Var};
 
@@ -42,7 +44,7 @@ where
 
 impl<T> GeneralNumberlinkBoard<T>
 where
-    T: BoardShape,
+    T: Step + BoardShape + VariantArray + PartialEq
 {
     fn valid_affiliations(&self) -> Range<AffiliationID> {
         0..self.affiliation_displays.len()
@@ -53,24 +55,26 @@ where
     }
 
     fn affiliation_var(&self, subject: AffiliationHolder, aff_id: AffiliationID) -> Var {
-        todo!();
-        // Var::from_index(match subject {
-        //     AffiliationHolder::NODE { location } => {
-        //        (location.1 * self.dims.0 + location.0) * self.valid_affiliations().len() + aff_id
-        //     }
-        //     AffiliationHolder::EDGE { nodes } => {
-        //         // compare y-values
-        //         let (lowest_index_location, direction) = match nodes.0.1.cmp(&nodes.1.1) {
-        //             Ordering::Less => nodes.0,
-        //             // tie; compare x-values
-        //             Ordering::Equal => if nodes.0.0 < nodes.1.0 { nodes.0 } else { nodes.1 }
-        //             Ordering::Greater => nodes.1,
-        //         };
-        //
-        //         self.dims.1 * self.dims.0 * self.num_affiliations()
-        //         + (lowest_index_location.1 * self.dims.0 + lowest_index_location.0) * 2
-        //     }
-        // })
+        Var::from_index(match subject {
+            AffiliationHolder::NODE { location } => {
+                (location.1 * self.dims.0 + location.0) * self.valid_affiliations().len() + aff_id
+            }
+            AffiliationHolder::EDGE { nodes } => {
+                // compare y-values
+                let lowest_index_location = match nodes.0.1.cmp(&nodes.1.1) {
+                    Ordering::Less => nodes.0,
+                    // tie; compare x-values
+                    Ordering::Equal => if nodes.0.0 < nodes.1.0 { nodes.0 } else { nodes.1 }
+                    Ordering::Greater => nodes.1,
+                };
+
+                let actual_dir = T::direction_to(nodes.0, nodes.1).unwrap().ensure_forward();
+
+                self.dims.1 * self.dims.0 * self.valid_affiliations().len()
+                    + (lowest_index_location.1 * self.dims.0 + lowest_index_location.0)
+                    * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0
+            }
+        })
     }
 
     fn solve(mut self) {
