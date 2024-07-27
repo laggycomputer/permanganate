@@ -107,7 +107,7 @@ pub trait BoardShape {
 
 impl<T> BoardShape for T
 where
-    T: Copy + Clone + Step + VariantArray + std::cmp::PartialEq,
+    T: Copy + Clone + Step + VariantArray + PartialEq,
 {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
         Self::VARIANTS.iter()
