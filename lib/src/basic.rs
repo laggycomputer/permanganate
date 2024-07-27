@@ -199,7 +199,7 @@ impl SimpleNumberlinkBoard {
                     // there exists exactly one neighbor with the same affiliation
                     clauses.extend(exactly_one(
                         self.neighbors_of(location).0.into_iter()
-                            .map(|loc| self.affiliation_var(loc, affiliation_here.ident))
+                            .map(|loc| self.affiliation_var(loc, affiliation_here.ident).positive())
                             .collect_vec()
                     ));
 
@@ -211,14 +211,14 @@ impl SimpleNumberlinkBoard {
                     // this cell has exactly one affiliation
                     clauses.extend(exactly_one(
                         (0..=self.last_used_aff_ident.unwrap())
-                            .map(|aff_id| self.affiliation_var(location, aff_id))
+                            .map(|aff_id| self.affiliation_var(location, aff_id).positive())
                             .collect_vec()
                     ));
 
                     // this cell has exactly one shape
                     clauses.extend(exactly_one(
                         SquarePathShape::VARIANTS.iter()
-                            .map(|shape| self.shape_var(location, *shape))
+                            .map(|shape| self.shape_var(location, *shape).positive())
                             .collect_vec()
                     ));
 
