@@ -1,15 +1,14 @@
 use std::collections::HashSet;
-use std::ops::IndexMut;
+use std::ops::{IndexMut, Range};
 
-use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
-use varisat::Var;
+use varisat::{CnfFormula, Lit, Var};
 
 use crate::common::affiliation::{AffiliationID, CellAffiliation};
 use crate::common::location::{Coord, Location, NumberlinkCell};
-use crate::common::shape::{BoardShape, SquareStepDirection, StepDirection};
+use crate::common::shape::{BoardShape, SquareStepDirection, Step};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 struct Node {
@@ -18,104 +17,84 @@ struct Node {
 }
 
 #[derive(Clone, Copy)]
-struct Edge {
+struct Edge<T>
+where
+    T: BoardShape,
+{
     affiliation: Option<CellAffiliation>,
+    direction: T,
 }
 
 #[derive(Eq, PartialEq, Clone, Copy)]
-enum AffiliationHolderType {
-    EDGE { nodes: UnorderedPair<Node> },
-    NODE,
+enum AffiliationHolder {
+    NODE { location: Location },
+    EDGE { nodes: UnorderedPair<Location> },
 }
 
-#[derive(Default)]
-pub struct GeneralNumberlinkBoard {
-    graph: UnGraphMap<Node, Edge>,
-    shape: BoardShape,
+pub struct GeneralNumberlinkBoard<T>
+where
+    T: BoardShape,
+{
+    graph: UnGraphMap<Node, Edge<T>>,
     dims: (Coord, Coord),
-    affiliation_vars: Vec<(AffiliationHolderType, AffiliationID)>,
     affiliation_displays: Vec<char>,
 }
 
-impl GeneralNumberlinkBoard {
-    fn edge_affiliation_var(&mut self, a: Node, b: Node, aff_id: AffiliationID) -> Var {
-        let aff_holder = AffiliationHolderType::EDGE { nodes: UnorderedPair(a, b) };
-
-        if !self.affiliation_vars.contains(&(aff_holder, aff_id)) {
-            self.affiliation_vars.push((aff_holder, aff_id));
-        }
-
-        self.edge_affiliation_var_unchecked(a, b, aff_id)
+impl<T> GeneralNumberlinkBoard<T>
+where
+    T: BoardShape,
+{
+    fn valid_affiliations(&self) -> Range<AffiliationID> {
+        0..self.affiliation_displays.len()
     }
 
-    fn edge_affiliation_var_unchecked(&self, a: Node, b: Node, aff_id: AffiliationID) -> Var {
-        let aff_holder = AffiliationHolderType::EDGE { nodes: UnorderedPair(a, b) };
-
-        Var::from_index(self.affiliation_vars.iter()
-            .find_position(|(nodes, existing_aff)| (*nodes).eq(&aff_holder) && *existing_aff == aff_id)
-            .and_then(|(pos, val)| Some(pos))
-            .unwrap()
-        )
+    fn valid_non_null_affiliations(&self) -> Range<AffiliationID> {
+        1..self.affiliation_displays.len()
     }
 
-    fn solve(self) {
-        // todo: every terminus vertex has an affiliation and exactly one connected edge and one neighbor with the same affiliation
+    fn affiliation_var(&self, subject: AffiliationHolder, aff_id: AffiliationID) -> Var {
+        todo!();
+        // Var::from_index(match subject {
+        //     AffiliationHolder::NODE { location } => {
+        //        (location.1 * self.dims.0 + location.0) * self.valid_affiliations().len() + aff_id
+        //     }
+        //     AffiliationHolder::EDGE { nodes } => {
+        //         // compare y-values
+        //         let (lowest_index_location, direction) = match nodes.0.1.cmp(&nodes.1.1) {
+        //             Ordering::Less => nodes.0,
+        //             // tie; compare x-values
+        //             Ordering::Equal => if nodes.0.0 < nodes.1.0 { nodes.0 } else { nodes.1 }
+        //             Ordering::Greater => nodes.1,
+        //         };
+        //
+        //         self.dims.1 * self.dims.0 * self.num_affiliations()
+        //         + (lowest_index_location.1 * self.dims.0 + lowest_index_location.0) * 2
+        //     }
+        // })
+    }
+
+    fn solve(mut self) {
         // every other connected edge has no affiliation
-        // todo: every non-terminus vertex has an affiliation and exactly two connected edges and two neighbors with the same affiliation
+        // todo: every non-terminus vertex has an affiliation and exactly two connected edges with the same affiliation
         // every other connected edge has no affiliation
         // an edge having an affiliation <=> its vertices have the same affiliation
-    }
-}
 
-impl From<&SquareNumberlinkBoardBuilder> for GeneralNumberlinkBoard {
-    fn from(builder: &SquareNumberlinkBoardBuilder) -> Self {
-        let shape = BoardShape::SQUARE;
-        let mut graph = UnGraphMap::with_capacity(
-            // naively allocate for a complete grid of this size, which usually isn't too far off
-            builder.cells.len(),
-            // "horizontal" edges
-            (builder.dims.0 - 1) * builder.dims.1
-                // "vertical" edges
-                + (builder.dims.1 - 1) * builder.dims.0,
-        );
+        let mut assumptions: Vec<Lit> = Vec::new();
+        let mut formulae: Vec<CnfFormula> = Vec::new();
 
-        let mut nodes = Array2::from_shape_fn(builder.cells.raw_dim(), |ind| Node {
-            location: Location::from(ind),
-            cell: *builder.cells.get(ind).unwrap(),
-        });
+        for vertex in self.graph.nodes() {
+            match vertex.cell {
+                // every terminus vertex has the given affiliation and no other
+                NumberlinkCell::TERMINUS { affiliation: CellAffiliation { ident: aff_id, .. } } => {
+                    assumptions.extend(self.valid_non_null_affiliations()
+                        .map(|maybe_aff| self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, maybe_aff)
+                            .lit(maybe_aff == aff_id)));
 
-
-        for x in 0..builder.dims.0 {
-            for y in 0..builder.dims.1 {
-                let location = Location(x, y);
-                // add edges down and to the right, if possible
-                let location_below = (StepDirection::SQUARE { direction: SquareStepDirection::DOWN }).attempt_from(location);
-                let location_right = (StepDirection::SQUARE { direction: SquareStepDirection::RIGHT }).attempt_from(location);
-
-                let node = nodes.get(location.as_index()).unwrap();
-                let node_below = nodes.get(location_below.as_index());
-                let node_right = nodes.get(location_right.as_index());
-
-                let edge = Edge { affiliation: None };
-                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, edge));
-                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, edge));
+                    // every terminus vertex has exactly one connected edge and one neighbor with the same affiliation
+                }
+                NumberlinkCell::EMPTY => {}
+                _ => {}
             }
-        }
-
-        // TODO: handle bridges, warps, any shape besides simple complete rectangle graph
-
-        let mut affiliation_displays = Vec::with_capacity(builder.affiliation_displays.len() + 1);
-        // affiliation 0 is unaffiliated and will display as empty
-        affiliation_displays.push('.');
-        affiliation_displays.extend(builder.affiliation_displays.clone());
-
-        Self {
-            graph,
-            shape,
-            dims: builder.dims,
-            affiliation_displays,
-
-            ..Default::default()
         }
     }
 }
@@ -158,7 +137,49 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub fn build(&self) -> GeneralNumberlinkBoard {
-        GeneralNumberlinkBoard::from(self)
+    pub fn build(&self) -> GeneralNumberlinkBoard<SquareStepDirection> {
+        let mut graph = UnGraphMap::with_capacity(
+            // naively allocate for a complete grid of this size, which usually isn't too far off
+            self.cells.len(),
+            // "horizontal" edges
+            (self.dims.0 - 1) * self.dims.1
+                // "vertical" edges
+                + (self.dims.1 - 1) * self.dims.0,
+        );
+
+        let mut nodes = Array2::from_shape_fn(self.cells.raw_dim(), |ind| Node {
+            location: Location::from(ind),
+            cell: *self.cells.get(ind).unwrap(),
+        });
+
+
+        for x in 0..self.dims.0 {
+            for y in 0..self.dims.1 {
+                let location = Location(x, y);
+                // add edges down and to the right, if possible
+                let location_below = SquareStepDirection::DOWN.attempt_from(location);
+                let location_right = SquareStepDirection::RIGHT.attempt_from(location);
+
+                let node = nodes.get(location.as_index()).unwrap();
+                let node_below = nodes.get(location_below.as_index());
+                let node_right = nodes.get(location_right.as_index());
+
+                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStepDirection::DOWN }));
+                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStepDirection::RIGHT }));
+            }
+        }
+
+        // TODO: handle bridges, warps, any shape besides simple complete rectangle graph
+
+        let mut affiliation_displays = Vec::with_capacity(self.affiliation_displays.len() + 1);
+        // affiliation 0 is unaffiliated and will display as empty
+        affiliation_displays.push('.');
+        affiliation_displays.extend(self.affiliation_displays.clone());
+
+        GeneralNumberlinkBoard {
+            graph,
+            dims: self.dims,
+            affiliation_displays,
+        }
     }
 }

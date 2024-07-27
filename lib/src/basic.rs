@@ -10,7 +10,7 @@ use varisat::{CnfFormula, Solver, Var};
 use crate::common::affiliation::{AffiliationID, CellAffiliation};
 use crate::common::location::{Coord, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
-use crate::common::shape::{SquareStepDirection, StepDirection};
+use crate::common::shape::{SquareStepDirection, Step};
 
 impl SquareStepDirection {
     fn is_part_of(&self, path_shape: &SquarePathShape) -> bool {
@@ -139,7 +139,7 @@ impl SimpleNumberlinkBoard {
     }
 
     pub fn step(&self, loc: Location, direction: SquareStepDirection) -> Option<Location> {
-        let new_loc = StepDirection::SQUARE { direction }.attempt_from(loc);
+        let new_loc = direction.attempt_from(loc);
 
         match (0..self.dims.0).contains(&new_loc.0) && (0..self.dims.1).contains(&new_loc.1) {
             true => Some(new_loc),

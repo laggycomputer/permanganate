@@ -3,6 +3,10 @@ use strum::VariantArray;
 
 use crate::common::location::Location;
 
+pub trait Step {
+    fn attempt_from(&self, location: Location) -> Location;
+}
+
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug)]
 pub(crate) enum SquareStepDirection {
     UP,
@@ -12,6 +16,22 @@ pub(crate) enum SquareStepDirection {
     // switch it up like nintendo
 }
 
+impl Step for SquareStepDirection {
+    fn attempt_from(&self, location: Location) -> Location {
+        match self {
+            Self::UP => location.offset_by((0, -1)),
+            Self::DOWN => location.offset_by((0, 1)),
+            Self::LEFT => location.offset_by((-1, 0)),
+            Self::RIGHT => location.offset_by((1, 0)),
+        }
+    }
+}
+
+// NB: we organize hexagonal grids as follows:
+// 0   1   2   3
+//   0   1   2   3
+// 0   1   2   3
+//   0   1   2   3
 #[derive(Copy, Clone, VariantArray)]
 pub(crate) enum HexStepDirection {
     UP,
@@ -22,61 +42,58 @@ pub(crate) enum HexStepDirection {
     LEFTUP,
 }
 
-#[derive(Copy, Clone)]
-pub(crate) enum StepDirection {
-    SQUARE { direction: SquareStepDirection },
-    HEXAGON { direction: HexStepDirection },
-}
-
-impl StepDirection {
-    pub(crate) fn attempt_from(self, location: Location) -> Location {
+impl Step for HexStepDirection {
+    fn attempt_from(&self, location: Location) -> Location {
         match self {
-            Self::SQUARE { direction } => match direction {
-                SquareStepDirection::UP => location.offset_by((0, -1)),
-                SquareStepDirection::DOWN => location.offset_by((0, 1)),
-                SquareStepDirection::LEFT => location.offset_by((-1, 0)),
-                SquareStepDirection::RIGHT => location.offset_by((1, 0)),
-            }
-            Self::HEXAGON { direction } => match direction {
-                HexStepDirection::UP => location.offset_by((0, -2)),
-                // these are more complicated; consider the parity of the rows
-                HexStepDirection::UPRIGHT => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
-                HexStepDirection::RIGHTDOWN => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
-                HexStepDirection::DOWN => location.offset_by((0, 2)),
-                HexStepDirection::DOWNLEFT => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, 1)),
-                HexStepDirection::LEFTUP => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, -1)),
-            }
+            Self::UP => location.offset_by((0, -2)),
+            // these are more complicated; consider the parity of the rows
+            Self::UPRIGHT => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
+            Self::RIGHTDOWN => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
+            Self::DOWN => location.offset_by((0, 2)),
+            Self::DOWNLEFT => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, 1)),
+            Self::LEFTUP => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, -1)),
         }
     }
 }
 
-#[derive(Default)]
-pub enum BoardShape {
-    #[default]
-    SQUARE,
-    // NB: we organize hexagonal grids as follows:
-    //   0 1 2 3 4...
-    //  0 1 2 3 4...
-    //   0 1 2 3 4...
-    //  0 1 2 3 4...
-    HEXAGON,
+pub trait BoardShape {
+    fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> where Self: Sized;
+    // directions which result in an index increase in a 2d array representation
+    fn forward_edge_directions(&self) -> &[Self] where Self: Sized;
+    fn ensure_forward_direction(direction: Self);
+    fn direction_to(&self, a: Location, b: Location) -> Option<Self> where Self: Sized;
 }
 
-pub trait CellNeighbors {
-    fn neighbors_of(&self, location: Location) -> Vec<(StepDirection, Location)>;
-}
+impl<T> BoardShape for T
+where
+    T: Copy + Clone + Step + VariantArray,
+{
+    fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
+        Self::VARIANTS.iter()
+            .map(|dir| (*dir, dir.attempt_from(location)))
+            .collect_vec()
+    }
 
-impl CellNeighbors for BoardShape {
-    fn neighbors_of(&self, location: Location) -> Vec<(StepDirection, Location)> {
-        match self {
-            BoardShape::SQUARE => SquareStepDirection::VARIANTS.iter()
-                .map(|dir| StepDirection::SQUARE { direction: *dir })
-                .map(|step_dir| (step_dir, step_dir.attempt_from(location)))
-                .collect_vec(),
-            BoardShape::HEXAGON => HexStepDirection::VARIANTS.iter()
-                .map(|dir| StepDirection::HEXAGON { direction: *dir })
-                .map(|step_dir| (step_dir, step_dir.attempt_from(location)))
-                .collect_vec(),
-        }
+    fn forward_edge_directions(&self) -> &[Self] {
+        todo!();
+        // match self {
+        //     BoardShape::SQUARE => &[
+        //         StepDirection::SQUARE { direction: SquareStepDirection::DOWN },
+        //         StepDirection::SQUARE { direction: SquareStepDirection::RIGHT },
+        //     ],
+        //     BoardShape::HEXAGON => &[
+        //         StepDirection::HEXAGON { direction: HexStepDirection::DOWN },
+        //         StepDirection::HEXAGON { direction: HexStepDirection::RIGHTDOWN },
+        //         StepDirection::HEXAGON { direction: HexStepDirection::DOWNLEFT },
+        //     ]
+        // }
+    }
+
+    fn ensure_forward_direction(direction: Self<>) {
+        todo!();
+    }
+
+    fn direction_to(&self, a: Location, b: Location) -> Option<Self<>> {
+        Self::VARIANTS.iter().find(|dir| dir.attempt_from(a) == b).and_then(|dir| Some(*dir))
     }
 }
