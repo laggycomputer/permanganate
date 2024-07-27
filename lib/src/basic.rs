@@ -6,7 +6,8 @@ use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
-use crate::common::{AffiliationID, CellAffiliation, Location, NumberlinkCell};
+
+use crate::common::{AffiliationID, CellAffiliation, Coord, Location, NumberlinkCell};
 use crate::logic::exactly_one;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, VariantArray, PartialEq)]
@@ -60,7 +61,7 @@ impl PathShape {
 }
 
 pub struct SimpleNumberlinkBoard {
-    dims: Location,
+    dims: (Coord, Coord),
     cells: Array2<NumberlinkCell>,
     last_used_aff_ident: Option<AffiliationID>,
     affiliation_displays: HashMap<AffiliationID, char>,
@@ -68,19 +69,23 @@ pub struct SimpleNumberlinkBoard {
 
 impl Default for SimpleNumberlinkBoard {
     fn default() -> Self {
-        Self::with_dims((5, 5))
+        Self::with_dims((5, 5)).unwrap()
     }
 }
 
 impl SimpleNumberlinkBoard {
-    pub fn with_dims(dims: Location) -> SimpleNumberlinkBoard {
-        SimpleNumberlinkBoard {
+    pub fn with_dims(dims: (Coord, Coord)) -> Result<Self, &'static str> {
+        if dims.0 <= 0 || dims.1 <= 0 {
+            return Err("invalid dims");
+        }
+
+        Ok(Self {
             dims,
             // row major
             cells: Array2::from_shape_simple_fn((dims.1, dims.0), NumberlinkCell::default),
             last_used_aff_ident: None,
             affiliation_displays: HashMap::new(),
-        }
+        })
     }
 
     fn next_avail_aff_ident(&self) -> AffiliationID {
@@ -142,10 +147,10 @@ impl SimpleNumberlinkBoard {
 
     pub fn step(&self, loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
         let new_loc = match direction {
-            BoardTraverseDirection::UP => (loc.0.overflowing_add_signed(0).0, loc.1.overflowing_add_signed(-1).0),
-            BoardTraverseDirection::DOWN => (loc.0.overflowing_add_signed(0).0, loc.1.overflowing_add_signed(1).0),
-            BoardTraverseDirection::LEFT => (loc.0.overflowing_add_signed(-1).0, loc.1.overflowing_add_signed(0).0),
-            BoardTraverseDirection::RIGHT => (loc.0.overflowing_add_signed(1).0, loc.1.overflowing_add_signed(0).0),
+            BoardTraverseDirection::UP => loc.offset_by((0, -1)),
+            BoardTraverseDirection::DOWN => loc.offset_by((0, 1)),
+            BoardTraverseDirection::LEFT => loc.offset_by((-1, 0)),
+            BoardTraverseDirection::RIGHT => loc.offset_by((1, 0)),
         };
 
         match (0..self.dims.0).contains(&new_loc.0) && (0..self.dims.1).contains(&new_loc.1) {
@@ -192,7 +197,7 @@ impl SimpleNumberlinkBoard {
         let mut assumptions = Vec::new();
 
         for (index, cell) in self.cells.indexed_iter() {
-            let location = (index.1, index.0);
+            let location = Location::from(index);
             match cell {
                 NumberlinkCell::TERMINUS { affiliation: affiliation_here } => {
                     let mut clauses = Vec::with_capacity(self.num_affiliations());
@@ -284,10 +289,10 @@ impl SimpleNumberlinkBoard {
         solver.solve().unwrap();
         let solved = solver.model().unwrap();
 
-        let mut new_board = Self::with_dims(self.dims);
+        let mut new_board = Self::with_dims(self.dims).unwrap();
 
         for (index, cell) in self.cells.indexed_iter() {
-            let location = (index.1, index.0);
+            let location = Location::from(index);
             match cell {
                 NumberlinkCell::TERMINUS { affiliation: _ } => {
                     new_board.cells.index_mut(index).assign_elem(*cell);
