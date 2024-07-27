@@ -10,9 +10,9 @@ use varisat::{CnfFormula, Solver, Var};
 use crate::common::affiliation::{AffiliationID, CellAffiliation};
 use crate::common::location::{Coord, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
-use crate::common::shape::{SquareStepDirection, Step};
+use crate::common::shape::{SquareStep, Step};
 
-impl SquareStepDirection {
+impl SquareStep {
     fn is_part_of(&self, path_shape: &SquarePathShape) -> bool {
         match self {
             Self::UP => vec![SquarePathShape::UPDOWN, SquarePathShape::UPLEFT, SquarePathShape::UPRIGHT].contains(&path_shape),
@@ -35,20 +35,20 @@ enum SquarePathShape {
 }
 
 impl SquarePathShape {
-    fn possible_with(&self, possible_directions: &HashSet<SquareStepDirection>) -> bool {
+    fn possible_with(&self, possible_directions: &HashSet<SquareStep>) -> bool {
         match self {
-            SquarePathShape::UPDOWN => possible_directions.contains(&SquareStepDirection::UP)
-                && possible_directions.contains(&SquareStepDirection::DOWN),
-            SquarePathShape::UPLEFT => possible_directions.contains(&SquareStepDirection::UP)
-                && possible_directions.contains(&SquareStepDirection::LEFT),
-            SquarePathShape::UPRIGHT => possible_directions.contains(&SquareStepDirection::UP)
-                && possible_directions.contains(&SquareStepDirection::RIGHT),
-            SquarePathShape::DOWNLEFT => possible_directions.contains(&SquareStepDirection::DOWN)
-                && possible_directions.contains(&SquareStepDirection::LEFT),
-            SquarePathShape::DOWNRIGHT => possible_directions.contains(&SquareStepDirection::DOWN)
-                && possible_directions.contains(&SquareStepDirection::RIGHT),
-            SquarePathShape::LEFTRIGHT => possible_directions.contains(&SquareStepDirection::LEFT)
-                && possible_directions.contains(&SquareStepDirection::RIGHT),
+            SquarePathShape::UPDOWN => possible_directions.contains(&SquareStep::UP)
+                && possible_directions.contains(&SquareStep::DOWN),
+            SquarePathShape::UPLEFT => possible_directions.contains(&SquareStep::UP)
+                && possible_directions.contains(&SquareStep::LEFT),
+            SquarePathShape::UPRIGHT => possible_directions.contains(&SquareStep::UP)
+                && possible_directions.contains(&SquareStep::RIGHT),
+            SquarePathShape::DOWNLEFT => possible_directions.contains(&SquareStep::DOWN)
+                && possible_directions.contains(&SquareStep::LEFT),
+            SquarePathShape::DOWNRIGHT => possible_directions.contains(&SquareStep::DOWN)
+                && possible_directions.contains(&SquareStep::RIGHT),
+            SquarePathShape::LEFTRIGHT => possible_directions.contains(&SquareStep::LEFT)
+                && possible_directions.contains(&SquareStep::RIGHT),
         }
     }
 }
@@ -138,7 +138,7 @@ impl SimpleNumberlinkBoard {
         self.last_used_aff_ident = Some(aff_id);
     }
 
-    pub fn step(&self, loc: Location, direction: SquareStepDirection) -> Option<Location> {
+    pub fn step(&self, loc: Location, direction: SquareStep) -> Option<Location> {
         let new_loc = direction.attempt_from(loc);
 
         match (0..self.dims.0).contains(&new_loc.0) && (0..self.dims.1).contains(&new_loc.1) {
@@ -147,10 +147,10 @@ impl SimpleNumberlinkBoard {
         }
     }
 
-    pub fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<SquareStepDirection>) {
+    pub fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<SquareStep>) {
         let mut neighbor_locs: HashSet<Location> = HashSet::with_capacity(4);
-        let mut possible_directions: HashSet<SquareStepDirection> = HashSet::with_capacity(4);
-        for dir in SquareStepDirection::VARIANTS {
+        let mut possible_directions: HashSet<SquareStep> = HashSet::with_capacity(4);
+        for dir in SquareStep::VARIANTS {
             if let Some(neighbor_loc) = self.step(loc, *dir) {
                 neighbor_locs.insert(neighbor_loc);
                 possible_directions.insert(*dir);

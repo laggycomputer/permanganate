@@ -8,7 +8,7 @@ use varisat::{CnfFormula, Lit, Var};
 
 use crate::common::affiliation::{AffiliationID, CellAffiliation};
 use crate::common::location::{Coord, Location, NumberlinkCell};
-use crate::common::shape::{BoardShape, SquareStepDirection, Step};
+use crate::common::shape::{BoardShape, SquareStep, Step};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 struct Node {
@@ -137,7 +137,7 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub fn build(&self) -> GeneralNumberlinkBoard<SquareStepDirection> {
+    pub fn build(&self) -> GeneralNumberlinkBoard<SquareStep> {
         let mut graph = UnGraphMap::with_capacity(
             // naively allocate for a complete grid of this size, which usually isn't too far off
             self.cells.len(),
@@ -157,15 +157,15 @@ impl SquareNumberlinkBoardBuilder {
             for y in 0..self.dims.1 {
                 let location = Location(x, y);
                 // add edges down and to the right, if possible
-                let location_below = SquareStepDirection::DOWN.attempt_from(location);
-                let location_right = SquareStepDirection::RIGHT.attempt_from(location);
+                let location_below = SquareStep::DOWN.attempt_from(location);
+                let location_right = SquareStep::RIGHT.attempt_from(location);
 
                 let node = nodes.get(location.as_index()).unwrap();
                 let node_below = nodes.get(location_below.as_index());
                 let node_right = nodes.get(location_right.as_index());
 
-                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStepDirection::DOWN }));
-                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStepDirection::RIGHT }));
+                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStep::DOWN }));
+                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStep::RIGHT }));
             }
         }
 
