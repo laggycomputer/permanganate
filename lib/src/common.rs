@@ -5,7 +5,7 @@ use ndarray::Ix;
 pub type Coord = usize;
 pub type AffiliationID = usize;
 
-#[derive(Clone, Eq, Hash, Copy, PartialEq)]
+#[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
 // x, y
 pub struct Location(pub Coord, pub Coord);
 impl Location {
@@ -23,13 +23,13 @@ impl From<(Ix, Ix)> for Location {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CellAffiliation {
     pub(crate) ident: AffiliationID,
     pub(crate) display: char,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub(crate) enum NumberlinkCell {
     TERMINUS { affiliation: CellAffiliation },
     PATH { affiliation: CellAffiliation },
