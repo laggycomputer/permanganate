@@ -1,5 +1,4 @@
-mod common;
-mod logic;
-mod basic;
-mod graph;
-mod tests;
+pub(crate) mod common;
+pub(crate) mod basic;
+pub(crate) mod graph;
+pub(crate) mod tests;

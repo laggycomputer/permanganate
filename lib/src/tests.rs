@@ -4,8 +4,9 @@ mod tests {
 
     use varisat::Var;
 
-    use crate::basic::{BoardTraverseDirection, SimpleNumberlinkBoard};
-    use crate::common::Location;
+    use crate::basic::SimpleNumberlinkBoard;
+    use crate::common::location::Location;
+    use crate::common::shape::SquareStepDirection;
 
     #[test]
     fn construct_basic_board() {
@@ -18,13 +19,13 @@ mod tests {
     #[test]
     fn step_invalid() {
         let board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
-        assert_eq!(board.step(Location(0, 0), BoardTraverseDirection::UP), None);
+        assert_eq!(board.step(Location(0, 0), SquareStepDirection::UP), None);
     }
 
     #[test]
     fn step_valid() {
         let board = SimpleNumberlinkBoard::with_dims((5, 5)).unwrap();
-        assert_eq!(board.step(Location(4, 4), BoardTraverseDirection::LEFT), Some(Location(3, 4)))
+        assert_eq!(board.step(Location(4, 4), SquareStepDirection::LEFT), Some(Location(3, 4)))
     }
 
     #[test]
@@ -40,7 +41,7 @@ mod tests {
         let board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
         let (neighbor_locs, possible_directions) = board.neighbors_of(Location(0, 0));
         assert_eq!(neighbor_locs.len(), 2);
-        assert_eq!(possible_directions, HashSet::from([BoardTraverseDirection::DOWN, BoardTraverseDirection::RIGHT]));
+        assert_eq!(possible_directions, HashSet::from([SquareStepDirection::DOWN, SquareStepDirection::RIGHT]));
     }
 
     #[test]

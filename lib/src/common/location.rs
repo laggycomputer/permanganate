@@ -2,12 +2,14 @@ use std::fmt::{Display, Formatter};
 
 use ndarray::Ix;
 
+use crate::common::affiliation::CellAffiliation;
+
 pub type Coord = usize;
-pub type AffiliationID = usize;
 
 #[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
 // x, y
 pub struct Location(pub Coord, pub Coord);
+
 impl Location {
     fn as_index(&self) -> (Coord, Coord) {
         (self.1, self.0)
@@ -21,12 +23,6 @@ impl From<(Ix, Ix)> for Location {
     fn from(value: (Ix, Ix)) -> Self {
         Self(value.1, value.0)
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct CellAffiliation {
-    pub(crate) ident: AffiliationID,
-    pub(crate) display: char,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]

@@ -7,32 +7,25 @@ use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
 
-use crate::common::{AffiliationID, CellAffiliation, Coord, Location, NumberlinkCell};
-use crate::logic::exactly_one;
+use crate::common::affiliation::{AffiliationID, CellAffiliation};
+use crate::common::location::{Coord, Location, NumberlinkCell};
+use crate::common::logic::exactly_one;
+use crate::common::shape::{SquareStepDirection, StepDirection};
 
-#[derive(Copy, Clone, Debug, Eq, Hash, VariantArray, PartialEq)]
-pub enum BoardTraverseDirection {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    // switch it up like nintendo
-}
-
-impl BoardTraverseDirection {
-    fn is_part_of(&self, path_shape: &PathShape) -> bool {
+impl SquareStepDirection {
+    fn is_part_of(&self, path_shape: &SquarePathShape) -> bool {
         match self {
-            BoardTraverseDirection::UP => vec![PathShape::UPDOWN, PathShape::UPLEFT, PathShape::UPRIGHT].contains(&path_shape),
-            BoardTraverseDirection::DOWN => vec![PathShape::UPDOWN, PathShape::DOWNLEFT, PathShape::DOWNRIGHT].contains(&path_shape),
-            BoardTraverseDirection::LEFT => vec![PathShape::LEFTRIGHT, PathShape::UPLEFT, PathShape::DOWNLEFT].contains(&path_shape),
-            BoardTraverseDirection::RIGHT => vec![PathShape::LEFTRIGHT, PathShape::UPRIGHT, PathShape::DOWNRIGHT].contains(&path_shape),
+            Self::UP => vec![SquarePathShape::UPDOWN, SquarePathShape::UPLEFT, SquarePathShape::UPRIGHT].contains(&path_shape),
+            Self::DOWN => vec![SquarePathShape::UPDOWN, SquarePathShape::DOWNLEFT, SquarePathShape::DOWNRIGHT].contains(&path_shape),
+            Self::LEFT => vec![SquarePathShape::LEFTRIGHT, SquarePathShape::UPLEFT, SquarePathShape::DOWNLEFT].contains(&path_shape),
+            Self::RIGHT => vec![SquarePathShape::LEFTRIGHT, SquarePathShape::UPRIGHT, SquarePathShape::DOWNRIGHT].contains(&path_shape),
         }
     }
 }
 
 // a path cell has exactly 2 neighbors in one of these six ways; we order them to make declaring variables easier
 #[derive(Copy, Clone, Debug, VariantArray, PartialEq)]
-enum PathShape {
+enum SquarePathShape {
     UPDOWN,
     UPLEFT,
     UPRIGHT,
@@ -41,21 +34,21 @@ enum PathShape {
     LEFTRIGHT,
 }
 
-impl PathShape {
-    fn possible_with(&self, possible_directions: &HashSet<BoardTraverseDirection>) -> bool {
+impl SquarePathShape {
+    fn possible_with(&self, possible_directions: &HashSet<SquareStepDirection>) -> bool {
         match self {
-            PathShape::UPDOWN => possible_directions.contains(&BoardTraverseDirection::UP)
-                && possible_directions.contains(&BoardTraverseDirection::DOWN),
-            PathShape::UPLEFT => possible_directions.contains(&BoardTraverseDirection::UP)
-                && possible_directions.contains(&BoardTraverseDirection::LEFT),
-            PathShape::UPRIGHT => possible_directions.contains(&BoardTraverseDirection::UP)
-                && possible_directions.contains(&BoardTraverseDirection::RIGHT),
-            PathShape::DOWNLEFT => possible_directions.contains(&BoardTraverseDirection::DOWN)
-                && possible_directions.contains(&BoardTraverseDirection::LEFT),
-            PathShape::DOWNRIGHT => possible_directions.contains(&BoardTraverseDirection::DOWN)
-                && possible_directions.contains(&BoardTraverseDirection::RIGHT),
-            PathShape::LEFTRIGHT => possible_directions.contains(&BoardTraverseDirection::LEFT)
-                && possible_directions.contains(&BoardTraverseDirection::RIGHT),
+            SquarePathShape::UPDOWN => possible_directions.contains(&SquareStepDirection::UP)
+                && possible_directions.contains(&SquareStepDirection::DOWN),
+            SquarePathShape::UPLEFT => possible_directions.contains(&SquareStepDirection::UP)
+                && possible_directions.contains(&SquareStepDirection::LEFT),
+            SquarePathShape::UPRIGHT => possible_directions.contains(&SquareStepDirection::UP)
+                && possible_directions.contains(&SquareStepDirection::RIGHT),
+            SquarePathShape::DOWNLEFT => possible_directions.contains(&SquareStepDirection::DOWN)
+                && possible_directions.contains(&SquareStepDirection::LEFT),
+            SquarePathShape::DOWNRIGHT => possible_directions.contains(&SquareStepDirection::DOWN)
+                && possible_directions.contains(&SquareStepDirection::RIGHT),
+            SquarePathShape::LEFTRIGHT => possible_directions.contains(&SquareStepDirection::LEFT)
+                && possible_directions.contains(&SquareStepDirection::RIGHT),
         }
     }
 }
@@ -121,13 +114,13 @@ impl SimpleNumberlinkBoard {
         Var::from_index((location.1 * self.dims.0 + location.0) * self.num_affiliations() + affiliation_id)
     }
 
-    fn shape_var(&self, location: Location, path_shape: PathShape) -> Var {
+    fn shape_var(&self, location: Location, path_shape: SquarePathShape) -> Var {
         Var::from_index(
             // highest possible affiliation var
             self.dims.1 * self.dims.0 * self.num_affiliations()
                 // now, build new index
-                + (location.1 * self.dims.0 + location.0) * PathShape::VARIANTS.len()
-                + PathShape::VARIANTS.iter()
+                + (location.1 * self.dims.0 + location.0) * SquarePathShape::VARIANTS.len()
+                + SquarePathShape::VARIANTS.iter()
                 .find_position(|shape| **shape == path_shape)
                 .unwrap().0
         )
@@ -145,13 +138,8 @@ impl SimpleNumberlinkBoard {
         self.last_used_aff_ident = Some(aff_id);
     }
 
-    pub fn step(&self, loc: Location, direction: BoardTraverseDirection) -> Option<Location> {
-        let new_loc = match direction {
-            BoardTraverseDirection::UP => loc.offset_by((0, -1)),
-            BoardTraverseDirection::DOWN => loc.offset_by((0, 1)),
-            BoardTraverseDirection::LEFT => loc.offset_by((-1, 0)),
-            BoardTraverseDirection::RIGHT => loc.offset_by((1, 0)),
-        };
+    pub fn step(&self, loc: Location, direction: SquareStepDirection) -> Option<Location> {
+        let new_loc = StepDirection::SQUARE { direction }.attempt_from(loc);
 
         match (0..self.dims.0).contains(&new_loc.0) && (0..self.dims.1).contains(&new_loc.1) {
             true => Some(new_loc),
@@ -159,10 +147,10 @@ impl SimpleNumberlinkBoard {
         }
     }
 
-    pub fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<BoardTraverseDirection>) {
+    pub fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<SquareStepDirection>) {
         let mut neighbor_locs: HashSet<Location> = HashSet::with_capacity(4);
-        let mut possible_directions: HashSet<BoardTraverseDirection> = HashSet::with_capacity(4);
-        for dir in BoardTraverseDirection::VARIANTS {
+        let mut possible_directions: HashSet<SquareStepDirection> = HashSet::with_capacity(4);
+        for dir in SquareStepDirection::VARIANTS {
             if let Some(neighbor_loc) = self.step(loc, *dir) {
                 neighbor_locs.insert(neighbor_loc);
                 possible_directions.insert(*dir);
@@ -229,14 +217,14 @@ impl SimpleNumberlinkBoard {
 
                     // this cell has exactly one shape
                     clauses.extend(exactly_one(
-                        PathShape::VARIANTS.iter()
+                        SquarePathShape::VARIANTS.iter()
                             .map(|shape| self.shape_var(location, *shape))
                             .collect_vec()
                     ));
 
                     let (locations, directions) = self.neighbors_of(location);
                     // for every possible path shape S on cell A...
-                    'shape: for path_shape in PathShape::VARIANTS.iter() {
+                    'shape: for path_shape in SquarePathShape::VARIANTS.iter() {
                         // let X be the statement "cell A has shape S"
                         let x = self.shape_var(location, *path_shape);
                         if !path_shape.possible_with(&directions) {
