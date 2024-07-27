@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use strum::VariantArray;
 
 use crate::common::location::Location;
@@ -11,6 +12,7 @@ pub(crate) enum SquareStepDirection {
     // switch it up like nintendo
 }
 
+#[derive(Copy, Clone, VariantArray)]
 enum HexStepDirection {
     UP,
     UPRIGHT,
@@ -20,6 +22,7 @@ enum HexStepDirection {
     LEFTUP,
 }
 
+#[derive(Copy, Clone)]
 pub(crate) enum StepDirection {
     SQUARE { direction: SquareStepDirection },
     HEXAGON { direction: HexStepDirection },
@@ -47,7 +50,7 @@ impl StepDirection {
     }
 }
 
-enum BoardShape {
+pub enum BoardShape {
     SQUARE,
     // NB: we organize hexagonal grids as follows:
     //   0 1 2 3 4...
@@ -57,16 +60,21 @@ enum BoardShape {
     HEXAGON,
 }
 
-trait CellNeighbors {
+pub trait CellNeighbors {
     fn neighbors_of(&self, location: Location) -> Vec<(StepDirection, Location)>;
 }
 
 impl CellNeighbors for BoardShape {
     fn neighbors_of(&self, location: Location) -> Vec<(StepDirection, Location)> {
-        todo!();
-        // match self {
-        //     BoardShape::SQUARE => {}
-        //     BoardShape::HEXAGON => {}
-        // }
+        match self {
+            BoardShape::SQUARE => SquareStepDirection::VARIANTS.iter()
+                .map(|dir| StepDirection::SQUARE { direction: *dir })
+                .map(|step_dir| (step_dir, step_dir.attempt_from(location)))
+                .collect_vec(),
+            BoardShape::HEXAGON => HexStepDirection::VARIANTS.iter()
+                .map(|dir| StepDirection::HEXAGON { direction: *dir })
+                .map(|step_dir| (step_dir, step_dir.attempt_from(location)))
+                .collect_vec(),
+        }
     }
 }

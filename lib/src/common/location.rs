@@ -11,7 +11,7 @@ pub type Coord = usize;
 pub struct Location(pub Coord, pub Coord);
 
 impl Location {
-    fn as_index(&self) -> (Coord, Coord) {
+    pub(crate) fn as_index(&self) -> (Coord, Coord) {
         (self.1, self.0)
     }
     pub fn offset_by(self, rhs: (isize, isize)) -> Self {
