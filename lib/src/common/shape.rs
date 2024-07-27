@@ -13,7 +13,7 @@ pub(crate) enum SquareStepDirection {
 }
 
 #[derive(Copy, Clone, VariantArray)]
-enum HexStepDirection {
+pub(crate) enum HexStepDirection {
     UP,
     UPRIGHT,
     RIGHTDOWN,

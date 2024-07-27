@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 pub type AffiliationID = usize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
