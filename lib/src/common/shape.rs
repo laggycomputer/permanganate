@@ -13,7 +13,7 @@ pub trait Step {
 }
 
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug)]
-pub(crate) enum SquareStep {
+pub enum SquareStep {
     UP,
     DOWN,
     LEFT,
@@ -54,7 +54,7 @@ impl Step for SquareStep {
 // 0   1   2   3
 //   0   1   2   3
 #[derive(Copy, Clone, VariantArray)]
-pub(crate) enum HexStep {
+pub enum HexStep {
     UP,
     UPRIGHT,
     RIGHTDOWN,
