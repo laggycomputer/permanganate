@@ -50,7 +50,9 @@ impl StepDirection {
     }
 }
 
+#[derive(Default)]
 pub enum BoardShape {
+    #[default]
     SQUARE,
     // NB: we organize hexagonal grids as follows:
     //   0 1 2 3 4...
