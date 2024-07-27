@@ -95,7 +95,7 @@ impl Step for HexStep {
     }
 }
 
-pub trait BoardShape {
+pub trait BoardShape: Copy + Step + VariantArray + PartialEq {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>
     where
         Self: Sized;
@@ -107,7 +107,7 @@ pub trait BoardShape {
 
 impl<T> BoardShape for T
 where
-    T: Copy + Clone + Step + VariantArray + PartialEq,
+    T: Copy + Step + VariantArray + PartialEq,
 {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
         Self::VARIANTS.iter()

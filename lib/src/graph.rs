@@ -44,7 +44,7 @@ where
 
 impl<T> GeneralNumberlinkBoard<T>
 where
-    T: Step + BoardShape + VariantArray + PartialEq
+    T: BoardShape
 {
     fn valid_affiliations(&self) -> Range<AffiliationID> {
         0..self.affiliation_displays.len()
