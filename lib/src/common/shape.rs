@@ -99,7 +99,7 @@ pub trait BoardShape {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>
     where
         Self: Sized;
-    fn direction_to(&self, a: Location, b: Location) -> Option<Self>
+    fn direction_to(a: Location, b: Location) -> Option<Self>
     where
         Self: Sized;
     fn ensure_forward(&self) -> Self;
@@ -115,7 +115,7 @@ where
             .collect_vec()
     }
 
-    fn direction_to(&self, a: Location, b: Location) -> Option<Self <>> {
+    fn direction_to(a: Location, b: Location) -> Option<Self <>> {
         Self::VARIANTS.iter().find(|dir| dir.attempt_from(a) == b).and_then(|dir| Some(*dir))
     }
 
