@@ -136,15 +136,7 @@ pub struct SquareNumberlinkBoardBuilder {
 
 impl Default for SquareNumberlinkBoardBuilder {
     fn default() -> Self {
-        Self {
-            dims: (NonZero::new(5).unwrap(), NonZero::new(5).unwrap()),
-            cells: Default::default(),
-            edge_blacklist: Default::default(),
-            node_blacklist: Default::default(),
-            bridges: Default::default(),
-            edge_whitelist: Default::default(),
-            affiliation_displays: vec![],
-        }
+        Self::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
     }
 }
 
@@ -153,7 +145,12 @@ impl SquareNumberlinkBoardBuilder {
         Self {
             dims,
             cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
-            ..Default::default()
+
+            edge_blacklist: Default::default(),
+            node_blacklist: Default::default(),
+            bridges: Default::default(),
+            edge_whitelist: Default::default(),
+            affiliation_displays: Default::default(),
         }
     }
 
