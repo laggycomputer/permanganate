@@ -10,4 +10,6 @@ fn main() {
         .add_termini('C', (Location(2, 0), Location(2, 2)))
         .build()
         .unwrap();
+
+    board.solve();
 }
