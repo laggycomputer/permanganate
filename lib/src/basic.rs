@@ -58,7 +58,7 @@ impl SquarePathShape {
 pub struct SimpleNumberlinkBoard {
     dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell>,
-    last_used_aff_ident: Option<AffiliationID>,
+    last_used_affiliation: Option<AffiliationID>,
     affiliation_displays: HashMap<AffiliationID, char>,
 }
 
@@ -74,13 +74,13 @@ impl SimpleNumberlinkBoard {
             dims,
             // row major
             cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
-            last_used_aff_ident: None,
+            last_used_affiliation: None,
             affiliation_displays: HashMap::new(),
         })
     }
 
-    fn next_avail_aff_ident(&self) -> AffiliationID {
-        match self.last_used_aff_ident {
+    fn next_avail_aff(&self) -> AffiliationID {
+        match self.last_used_affiliation {
             None => 0,
             Some(aff) => aff + 1
         }
@@ -88,28 +88,28 @@ impl SimpleNumberlinkBoard {
 
     pub fn add_termini(&mut self, locations: (Location, Location)) {
         self._add_termini(
-            self.next_avail_aff_ident(),
-            ('A' as usize + self.next_avail_aff_ident()) as u8 as char,
+            self.next_avail_aff(),
+            ('A' as usize + self.next_avail_aff()) as u8 as char,
             locations)
     }
 
     pub fn add_termini_with_display(&mut self, display: char, locations: (Location, Location)) {
         self._add_termini(
-            self.next_avail_aff_ident(),
+            self.next_avail_aff(),
             display,
             locations)
     }
 
     pub fn num_affiliations(&self) -> usize {
         // if ID n is used, then n+1 IDs exist
-        match self.last_used_aff_ident {
+        match self.last_used_affiliation {
             None => 0,
-            Some(aff_id) => aff_id + 1
+            Some(aff) => aff + 1
         }
     }
 
-    pub(crate) fn affiliation_var(&self, location: Location, affiliation_id: AffiliationID) -> Var {
-        Var::from_index((location.1 * self.dims.0.get() + location.0) * self.num_affiliations() + affiliation_id)
+    pub(crate) fn affiliation_var(&self, location: Location, aff: AffiliationID) -> Var {
+        Var::from_index((location.1 * self.dims.0.get() + location.0) * self.num_affiliations() + aff)
     }
 
     fn shape_var(&self, location: Location, path_shape: SquarePathShape) -> Var {
@@ -124,16 +124,16 @@ impl SimpleNumberlinkBoard {
         )
     }
 
-    fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: (Location, Location)) {
+    fn _add_termini(&mut self, aff: AffiliationID, display: char, locations: (Location, Location)) {
         for endpoint_loc in [locations.0, locations.1] {
             self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
-                affiliation: aff_id
+                affiliation: aff
             });
         }
 
-        self.affiliation_displays.insert(aff_id, display);
+        self.affiliation_displays.insert(aff, display);
 
-        self.last_used_aff_ident = Some(aff_id);
+        self.last_used_affiliation = Some(aff);
     }
 
     pub fn step(&self, loc: Location, direction: SquareStep) -> Option<Location> {
@@ -188,10 +188,10 @@ impl SimpleNumberlinkBoard {
                 NumberlinkCell::TERMINUS { affiliation: affiliation_here } => {
                     let mut clauses = Vec::with_capacity(self.num_affiliations());
 
-                    for aff_id in 0..self.num_affiliations() {
-                        let var_here = self.affiliation_var(location, aff_id);
+                    for aff in 0..self.num_affiliations() {
+                        let var_here = self.affiliation_var(location, aff);
                         // this cell has the correct affiliation and does not have any other affiliation
-                        assumptions.push(var_here.lit(aff_id == *affiliation_here));
+                        assumptions.push(var_here.lit(aff == *affiliation_here));
                     }
 
                     // there exists exactly one neighbor with the same affiliation
@@ -208,8 +208,8 @@ impl SimpleNumberlinkBoard {
 
                     // this cell has exactly one affiliation
                     clauses.extend(exactly_one(
-                        (0..=self.last_used_aff_ident.unwrap())
-                            .map(|aff_id| self.affiliation_var(location, aff_id).positive())
+                        (0..=self.last_used_affiliation.unwrap())
+                            .map(|aff| self.affiliation_var(location, aff).positive())
                             .collect_vec()
                     ));
 
@@ -232,7 +232,7 @@ impl SimpleNumberlinkBoard {
                         }
 
                         // for each affiliation this cell (cell A) may hold...
-                        for affiliation in 0..=self.last_used_aff_ident.unwrap() {
+                        for affiliation in 0..=self.last_used_affiliation.unwrap() {
                             // for each neighbor of cell A, call it cell B...
                             for (neighbor_location, direction) in locations.iter().zip(directions.clone()) {
                                 // let Y be the statement "cell A has affiliation C", Z be the statement "cell B has affiliation C"
@@ -284,7 +284,7 @@ impl SimpleNumberlinkBoard {
                     new_board.cells.index_mut(index).assign_elem(*cell);
                 }
                 NumberlinkCell::EMPTY => {
-                    let solved_affiliation = (0..=self.last_used_aff_ident.unwrap())
+                    let solved_affiliation = (0..=self.last_used_affiliation.unwrap())
                         .find(|aff| {
                             let var = self.affiliation_var(location, *aff);
                             solved.get(var.index()).unwrap().is_positive()
