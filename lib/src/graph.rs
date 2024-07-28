@@ -20,7 +20,7 @@ struct Node {
     cell: NumberlinkCell,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
 struct Edge<T>
 where
     T: BoardShape,
@@ -29,7 +29,7 @@ where
     direction: T,
 }
 
-#[derive(Eq, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy, Hash)]
 enum AffiliationHolder {
     NODE { location: Location },
     EDGE { nodes: UnorderedPair<Location> },
@@ -79,9 +79,7 @@ where
         })
     }
 
-    fn solve(mut self) {
-        // todo: every non-terminus vertex has an affiliation and exactly two connected edges with the same affiliation
-        // every other connected edge has no affiliation
+    pub fn solve(mut self) {
         // an edge having an affiliation <=> its vertices have the same affiliation
 
         let mut assumptions: Vec<Lit> = Vec::new();
@@ -115,7 +113,53 @@ where
                             .collect_vec()
                     )));
                 }
-                NumberlinkCell::EMPTY => {}
+                NumberlinkCell::EMPTY => {
+                    // here, V must have one nonzero affiliation and exactly two incident edges with the same affiliation
+                    // every other incident edge has no affiliation
+                    let all_incident = self.graph.edges(vertex)
+                        .map(|(n1, n2, e)| (n1, n2, *e))
+                        .collect::<HashSet<(Node, Node, Edge<T>)>>();
+
+                    let paths_to_truth = all_incident.iter().combinations(2)
+                        // for two incident edges E_1, E_2...
+                        .flat_map(|select_two| {
+                            // get the other incident edges
+                            let select_two_deref = HashSet::from_iter(select_two.iter().map(|v| **v));
+                            let others = all_incident.difference(&select_two_deref).collect_vec();
+
+                            self.valid_non_null_affiliations()
+                                // for some affiliation A...
+                                .map(|aff_id| {
+                                    // with these iterables, we can now construct a unique "path to truth"
+                                    let mut requirements = Vec::with_capacity(1 + all_incident.len());
+
+                                    // V has affiliation A
+                                    requirements.push(self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, aff_id).positive());
+
+                                    // E_1, E_2 have affiliation A
+                                    requirements.extend(select_two.iter()
+                                        .map(|(n1, n2, e)| self.affiliation_var(
+                                            AffiliationHolder::EDGE { nodes: UnorderedPair::from((n1.location, n2.location)) }, aff_id)
+                                            .positive())
+                                        .collect_vec());
+
+                                    // the other incident edges have affiliation 0
+                                    requirements.extend(others.iter()
+                                        .map(|(n1, n2, e)| self.affiliation_var(
+                                            AffiliationHolder::EDGE { nodes: UnorderedPair::from((n1.location, n2.location)) }, 0)
+                                            .positive())
+                                        .collect_vec());
+
+                                    requirements
+                                })
+                                .collect_vec()
+                        });
+
+                    let paths_sum_of_product = paths_to_truth.multi_cartesian_product()
+                        .collect_vec();
+
+                    formulae.push(CnfFormula::from(paths_sum_of_product));
+                }
                 _ => {}
             }
         }
