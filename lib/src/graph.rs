@@ -182,7 +182,10 @@ where
             }
         }
 
-        for edge_triple in self.graph.all_edges() {}
+        for edge_triple in self.graph.all_edges() {
+            // an edge having a non-null affiliation <=> its vertices have the same affiliation
+
+        }
     }
 }
 
