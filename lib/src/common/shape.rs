@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use itertools::Itertools;
 use strum::VariantArray;
 
@@ -95,7 +97,7 @@ impl Step for HexStep {
     }
 }
 
-pub trait BoardShape: Copy + Step + VariantArray + PartialEq {
+pub trait BoardShape: Copy + Step + VariantArray + PartialEq + Eq + Hash {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>
     where
         Self: Sized;
@@ -107,7 +109,7 @@ pub trait BoardShape: Copy + Step + VariantArray + PartialEq {
 
 impl<T> BoardShape for T
 where
-    T: Copy + Step + VariantArray + PartialEq,
+    T: Copy + Step + VariantArray + PartialEq + Eq + Hash,
 {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
         Self::VARIANTS.iter()
