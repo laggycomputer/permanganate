@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-
+    use std::num::NonZero;
     use varisat::Var;
 
     use crate::basic::SimpleNumberlinkBoard;
@@ -10,7 +10,7 @@ mod tests {
 
     #[test]
     fn construct_basic_board() {
-        let mut board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
+        let mut board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(3).unwrap())).unwrap();
         board.add_termini_with_display('A', (Location(0, 0), Location(2, 2)));
         board.add_termini((Location(0, 1), Location(2, 1)));
         assert_eq!(board.to_string(), "A..\nB.B\n..A\n")
@@ -18,19 +18,19 @@ mod tests {
 
     #[test]
     fn step_invalid() {
-        let board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
+        let board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(3).unwrap())).unwrap();
         assert_eq!(board.step(Location(0, 0), SquareStep::UP), None);
     }
 
     #[test]
     fn step_valid() {
-        let board = SimpleNumberlinkBoard::with_dims((5, 5)).unwrap();
+        let board = SimpleNumberlinkBoard::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap())).unwrap();
         assert_eq!(board.step(Location(4, 4), SquareStep::LEFT), Some(Location(3, 4)))
     }
 
     #[test]
     fn num_affiliations() {
-        let mut board = SimpleNumberlinkBoard::with_dims((3, 5)).unwrap();
+        let mut board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(5).unwrap())).unwrap();
         board.add_termini_with_display('A', (Location(0, 0), Location(2, 4)));
         board.add_termini_with_display('B', (Location(0, 1), Location(2, 3)));
         assert_eq!(board.num_affiliations(), 2)
@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn neighbors_of_corner() {
-        let board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
+        let board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(3).unwrap())).unwrap();
         let (neighbor_locs, possible_directions) = board.neighbors_of(Location(0, 0));
         assert_eq!(neighbor_locs.len(), 2);
         assert_eq!(possible_directions, HashSet::from([SquareStep::DOWN, SquareStep::RIGHT]));
@@ -46,19 +46,19 @@ mod tests {
 
     #[test]
     fn neighbors_of_edge() {
-        let board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
+        let board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(3).unwrap())).unwrap();
         assert_eq!(board.neighbors_of(Location(1, 0)).0.len(), 3)
     }
 
     #[test]
     fn neighbors_of_surrounded() {
-        let board = SimpleNumberlinkBoard::with_dims((3, 3)).unwrap();
+        let board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(3).unwrap())).unwrap();
         assert_eq!(board.neighbors_of(Location(1, 1)).0.len(), 4)
     }
 
     #[test]
     fn affiliation_var() {
-        let mut board = SimpleNumberlinkBoard::with_dims((3, 5)).unwrap();
+        let mut board = SimpleNumberlinkBoard::with_dims((NonZero::new(3).unwrap(), NonZero::new(5).unwrap())).unwrap();
         board.add_termini_with_display('A', (Location(0, 0), Location(2, 2)));
         board.add_termini_with_display('B', (Location(0, 1), Location(0, 2)));
         assert_eq!(board.affiliation_var(Location(2, 4), 1), Var::from_index(29));
@@ -68,7 +68,7 @@ mod tests {
     fn solve_board() {
         {
             // flow free classic pack level 1
-            let mut board = SimpleNumberlinkBoard::with_dims((5, 5)).unwrap();
+            let mut board = SimpleNumberlinkBoard::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap())).unwrap();
             board.add_termini_with_display('A', (Location(0, 0), Location(1, 4)));
             board.add_termini_with_display('B', (Location(2, 0), Location(1, 3)));
             board.add_termini_with_display('C', (Location(2, 1), Location(2, 4)));
@@ -85,7 +85,7 @@ aACEe
         }
         {
             // flow free extreme pack 2 12x12 level 13
-            let mut board = SimpleNumberlinkBoard::with_dims((12, 12)).unwrap();
+            let mut board = SimpleNumberlinkBoard::with_dims((NonZero::new(12).unwrap(), NonZero::new(12).unwrap())).unwrap();
             board.add_termini_with_display('A', (Location(7, 4), Location(4, 11)));
             board.add_termini_with_display('B', (Location(6, 4), Location(5, 11)));
             board.add_termini_with_display('C', (Location(6, 6), Location(0, 11)));
