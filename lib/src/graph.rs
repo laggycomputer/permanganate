@@ -35,10 +35,17 @@ enum AffiliationHolder {
     EDGE { nodes: UnorderedPair<Location> },
 }
 
-impl AffiliationHolder
+impl<T: BoardShape> From<&(Node, Node, &Edge<T>)> for AffiliationHolder
 {
-    fn from_edge_triple<T: BoardShape>(tuple: &(Node, Node, &Edge<T>)) -> Self {
-        Self::EDGE { nodes: UnorderedPair::from((tuple.0.location, tuple.1.location)) }
+    fn from(value: &(Node, Node, &Edge<T>)) -> Self {
+        Self::EDGE { nodes: UnorderedPair::from((value.0.location, value.1.location)) }
+    }
+}
+
+impl From<Node> for AffiliationHolder
+{
+    fn from(value: Node) -> Self {
+        Self::NODE { location: value.location }
     }
 }
 
@@ -87,8 +94,6 @@ where
     }
 
     pub fn solve(mut self) {
-        // an edge having an affiliation <=> its vertices have the same affiliation
-
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
@@ -98,13 +103,13 @@ where
                 NumberlinkCell::TERMINUS { affiliation: CellAffiliation { ident: aff_id, .. } } => {
                     // the affiliation of V is the one already assigned, and no other; we tell the solver to assume this is so
                     assumptions.extend(self.valid_non_null_affiliations()
-                        .map(|maybe_aff| self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, maybe_aff)
+                        .map(|maybe_aff| self.affiliation_var(AffiliationHolder::from(vertex), maybe_aff)
                             .lit(maybe_aff == aff_id)));
 
                     // exactly one incident edge E has the same affiliation
                     formulae.push(CnfFormula::from(exactly_one(
                         self.graph.edges(vertex)
-                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(&triple), aff_id).positive())
+                            .map(|e_triple| self.affiliation_var(AffiliationHolder::from(&e_triple), aff_id).positive())
                             .collect_vec()
                     )));
 
@@ -112,18 +117,18 @@ where
                     // or, equivalently, exactly 1 incident edge does *not* have affiliation 0
                     formulae.push(CnfFormula::from(exactly_one(
                         self.graph.edges(vertex)
-                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(&triple), 0).negative())
+                            .map(|e_triple| self.affiliation_var(AffiliationHolder::from(&e_triple), 0).negative())
                             .collect_vec()
                     )));
                 }
                 NumberlinkCell::EMPTY => {
                     // V must have nonzero affiliation
-                    assumptions.push(self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, 0).negative());
+                    assumptions.push(self.affiliation_var(AffiliationHolder::from(vertex), 0).negative());
 
                     // V has only one affiliation
                     formulae.push(CnfFormula::from(exactly_one(
                         self.valid_non_null_affiliations()
-                            .map(|aff_id| self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, aff_id).positive())
+                            .map(|aff_id| self.affiliation_var(AffiliationHolder::from(vertex), aff_id).positive())
                             .collect_vec()
                     )));
 
@@ -134,11 +139,11 @@ where
                         {
                             let mut terms = Vec::with_capacity(1 + all_incident.len());
                             // V having affiliation A...
-                            terms.push(self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, aff_id).negative());
+                            terms.push(self.affiliation_var(AffiliationHolder::from(vertex), aff_id).negative());
 
                             // implies at least one incident edge E_1 has the same affiliation
                             terms.extend(all_incident.iter()
-                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id).positive())
+                                .map(|e_triple| self.affiliation_var(AffiliationHolder::from(e_triple), aff_id).positive())
                             );
 
                             formulae.push(CnfFormula::from(vec![terms]))
@@ -155,7 +160,7 @@ where
                                     // = !X + Y + Z + ...
                                     // in other words, the variable is positive unless E_n is E_1
                                     all_incident.iter()
-                                        .map(|en_triple| self.affiliation_var(AffiliationHolder::from_edge_triple(en_triple), aff_id).lit(e1_triple != en_triple))
+                                        .map(|en_triple| self.affiliation_var(AffiliationHolder::from(en_triple), aff_id).lit(e1_triple != en_triple))
                                         .collect_vec()
                                 })));
                         }
@@ -166,7 +171,7 @@ where
                             // one choice for (E_1, E_2, E_3) as mentioned above
                             .map(|selection| selection.iter()
                                 // for each of these three, generate the literal stating its affiliation is not A
-                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id).negative())
+                                .map(|e_triple| self.affiliation_var(AffiliationHolder::from(*e_triple), aff_id).negative())
                                 .collect_vec())
                             .collect_vec();
 
@@ -176,6 +181,8 @@ where
                 _ => {}
             }
         }
+
+        for edge_triple in self.graph.all_edges() {}
     }
 }
 
