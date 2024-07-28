@@ -8,8 +8,8 @@ use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
 
-use crate::common::affiliation::{AffiliationID, Affiliation};
-use crate::common::location::{Coord, Dimension, Location, NumberlinkCell};
+use crate::common::affiliation::{Affiliation, AffiliationID};
+use crate::common::location::{Dimension, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{SquareStep, Step};
 

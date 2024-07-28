@@ -1,7 +1,7 @@
 use std::ops::Index;
 
 use itertools::Itertools;
-use varisat::{Lit, Var};
+use varisat::Lit;
 
 pub(crate) fn invert(lit: Lit) -> Lit {
     match lit.is_negative() {
