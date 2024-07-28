@@ -104,7 +104,7 @@ where
                     // exactly one incident edge E has the same affiliation
                     formulae.push(CnfFormula::from(exactly_one(
                         self.graph.edges(vertex)
-                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id).positive())
+                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(&triple), aff_id).positive())
                             .collect_vec()
                     )));
 
@@ -112,7 +112,7 @@ where
                     // or, equivalently, exactly 1 incident edge does *not* have affiliation 0
                     formulae.push(CnfFormula::from(exactly_one(
                         self.graph.edges(vertex)
-                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), 0).negative())
+                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(&triple), 0).negative())
                             .collect_vec()
                     )));
                 }
@@ -131,7 +131,6 @@ where
                         .collect::<HashSet<(Node, Node, &Edge<T>)>>();
 
                     for aff_id in self.valid_non_null_affiliations() {
-                        let mut formula = Vec::new();
                         {
                             let mut terms = Vec::with_capacity(1 + all_incident.len());
                             // V having affiliation A...
@@ -139,24 +138,39 @@ where
 
                             // implies at least one incident edge E_1 has the same affiliation
                             terms.extend(all_incident.iter()
-                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id))
-                                .collect_vec()
+                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id).positive())
                             );
 
-                            formula.push(terms)
+                            formulae.push(CnfFormula::from(vec![terms]))
                         }
 
                         // todo: consider adding (V does not have affiliation A) => (no incident edge has affiliation A)
 
-                        for (n1, n2, e1) in all_incident {
-                            // E_1 having affiliation A implies that another E_2 incident to V has affiliation A
-                            // or, if we let X = (E_1 has affiliation A), Y = (E_n has affiliation A), and so on...
-                            // X => Y + Z + ...
-                            // !X + Y + Z + ...
-                            let terms = all_incident.iter()
-                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id));
+                        {
+                            formulae.push(CnfFormula::from(all_incident.iter()
+                                .map(|e1_triple| {
+                                    // some incident E_1 having affiliation A implies that another E_2 incident to V has affiliation A
+                                    // or, if we let X = (E_1 has affiliation A), Y = (E_n has affiliation A), and so on...
+                                    // X => Y + Z + ...
+                                    // = !X + Y + Z + ...
+                                    // in other words, the variable is positive unless E_n is E_1
+                                    all_incident.iter()
+                                        .map(|en_triple| self.affiliation_var(AffiliationHolder::from_edge_triple(en_triple), aff_id).lit(e1_triple != en_triple))
+                                        .collect_vec()
+                                })));
                         }
-                        // however, no three such E exist
+
+                        // however, no three such E exist; i.e. for any choice of 3 incident E (E_1, E_2, E_3), at least one does not have affiliation A
+                        let no_three_clauses = all_incident.iter()
+                            .combinations(3)
+                            // one choice for (E_1, E_2, E_3) as mentioned above
+                            .map(|selection| selection.iter()
+                                // for each of these three, generate the literal stating its affiliation is not A
+                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id).negative())
+                                .collect_vec())
+                            .collect_vec();
+
+                        formulae.push(CnfFormula::from(no_three_clauses));
                     }
                 }
                 _ => {}
