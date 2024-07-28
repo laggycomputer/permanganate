@@ -9,7 +9,7 @@ use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Var};
 
-use crate::common::affiliation::{Affiliation, AffiliationID};
+use crate::common::affiliation::AffiliationID;
 use crate::common::location::{Dimension, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{BoardShape, SquareStep, Step};
@@ -25,7 +25,7 @@ struct Edge<T>
 where
     T: BoardShape,
 {
-    affiliation: Option<Affiliation>,
+    affiliation: AffiliationID,
     direction: T,
 }
 
@@ -280,8 +280,8 @@ impl SquareNumberlinkBoardBuilder {
                 let node_below = nodes.get(location_below.as_index());
                 let node_right = nodes.get(location_right.as_index());
 
-                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStep::DOWN }));
-                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: None, direction: SquareStep::RIGHT }));
+                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: 0, direction: SquareStep::DOWN }));
+                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: 0, direction: SquareStep::RIGHT }));
             }
         }
 
