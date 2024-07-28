@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter};
 use std::num::NonZero;
+
 use ndarray::Ix;
 
-use crate::common::affiliation::Affiliation;
+use crate::common::affiliation::AffiliationID;
 
 pub type Coord = usize;
 pub type Dimension = NonZero<Coord>;
@@ -28,18 +28,8 @@ impl From<(Ix, Ix)> for Location {
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub(crate) enum NumberlinkCell {
-    TERMINUS { affiliation: Affiliation },
-    PATH { affiliation: Affiliation },
+    TERMINUS { affiliation: AffiliationID },
+    PATH { affiliation: AffiliationID },
     #[default]
     EMPTY,
-}
-
-impl Display for NumberlinkCell {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            NumberlinkCell::TERMINUS { affiliation } => affiliation.display.to_ascii_uppercase(),
-            NumberlinkCell::PATH { affiliation } => affiliation.display.to_ascii_lowercase(),
-            NumberlinkCell::EMPTY => '.'
-        })
-    }
 }

@@ -8,7 +8,7 @@ use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
 
-use crate::common::affiliation::{Affiliation, AffiliationID};
+use crate::common::affiliation::AffiliationID;
 use crate::common::location::{Dimension, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{SquareStep, Step};
@@ -54,6 +54,7 @@ impl SquarePathShape {
     }
 }
 
+#[derive(Clone)]
 pub struct SimpleNumberlinkBoard {
     dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell>,
@@ -126,7 +127,7 @@ impl SimpleNumberlinkBoard {
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: (Location, Location)) {
         for endpoint_loc in [locations.0, locations.1] {
             self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
-                affiliation: Affiliation { ident: aff_id, display }
+                affiliation: aff_id
             });
         }
 
@@ -162,10 +163,10 @@ impl SimpleNumberlinkBoard {
         let mut found_termini: HashMap<AffiliationID, u8> = HashMap::new();
         for cell in self.cells.iter() {
             if let NumberlinkCell::TERMINUS { affiliation } = cell {
-                if let Some(count) = found_termini.get_mut(&affiliation.ident) {
+                if let Some(count) = found_termini.get_mut(&affiliation) {
                     count.add_assign(1)
                 } else {
-                    found_termini.insert(affiliation.ident, 1);
+                    found_termini.insert(*affiliation, 1);
                 }
             }
         }
@@ -190,13 +191,13 @@ impl SimpleNumberlinkBoard {
                     for aff_id in 0..self.num_affiliations() {
                         let var_here = self.affiliation_var(location, aff_id);
                         // this cell has the correct affiliation and does not have any other affiliation
-                        assumptions.push(var_here.lit(aff_id == affiliation_here.ident));
+                        assumptions.push(var_here.lit(aff_id == *affiliation_here));
                     }
 
                     // there exists exactly one neighbor with the same affiliation
                     clauses.extend(exactly_one(
                         self.neighbors_of(location).0.into_iter()
-                            .map(|loc| self.affiliation_var(loc, affiliation_here.ident).positive())
+                            .map(|loc| self.affiliation_var(loc, *affiliation_here).positive())
                             .collect_vec()
                     ));
 
@@ -274,7 +275,7 @@ impl SimpleNumberlinkBoard {
         solver.solve().unwrap();
         let solved = solver.model().unwrap();
 
-        let mut new_board = Self::with_dims(self.dims).unwrap();
+        let mut new_board = self.clone();
 
         for (index, cell) in self.cells.indexed_iter() {
             let location = Location::from(index);
@@ -289,10 +290,7 @@ impl SimpleNumberlinkBoard {
                             solved.get(var.index()).unwrap().is_positive()
                         }).unwrap();
                     new_board.cells.index_mut(index).assign_elem(NumberlinkCell::PATH {
-                        affiliation: Affiliation {
-                            ident: solved_affiliation,
-                            display: *self.affiliation_displays.get(&solved_affiliation).unwrap(),
-                        }
+                        affiliation: solved_affiliation
                     });
 
                     // todo: eliminate cycles if found
@@ -315,7 +313,15 @@ impl Display for SimpleNumberlinkBoard {
         let mut ret = String::new();
 
         for row in self.cells.rows() {
-            ret.push_str(&*row.mapv(|cell| cell.to_string()).to_vec().join(""));
+            ret.push_str(&*row.mapv(|cell| match cell {
+                NumberlinkCell::TERMINUS { affiliation } => {
+                    self.affiliation_displays.get(&affiliation).unwrap().to_ascii_uppercase()
+                },
+                NumberlinkCell::PATH {affiliation} => {
+                    self.affiliation_displays.get(&affiliation).unwrap().to_ascii_lowercase()
+                },
+                NumberlinkCell::EMPTY => '.',
+            }).to_vec().into_iter().join(""));
             ret.push('\n');
         }
         write!(f, "{}", ret)

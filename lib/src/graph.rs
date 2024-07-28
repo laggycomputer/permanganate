@@ -9,7 +9,7 @@ use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Var};
 
-use crate::common::affiliation::{AffiliationID, Affiliation};
+use crate::common::affiliation::{Affiliation, AffiliationID};
 use crate::common::location::{Dimension, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{BoardShape, SquareStep, Step};
@@ -100,7 +100,7 @@ where
         for vertex in self.graph.nodes() {
             // let this vertex be V
             match vertex.cell {
-                NumberlinkCell::TERMINUS { affiliation: Affiliation { ident: aff_id, .. } } => {
+                NumberlinkCell::TERMINUS { affiliation: aff_id } => {
                     // the affiliation of V is the one already assigned, and no other; we tell the solver to assume this is so
                     assumptions.extend(self.valid_non_null_affiliations()
                         .map(|maybe_aff| self.affiliation_var(AffiliationHolder::from(vertex), maybe_aff)
@@ -184,7 +184,6 @@ where
 
         for edge_triple in self.graph.all_edges() {
             // an edge having a non-null affiliation <=> its vertices have the same affiliation
-
         }
     }
 }
@@ -244,12 +243,7 @@ impl SquareNumberlinkBoardBuilder {
         let aff_id = self.affiliation_displays.len() + 1;
         self.affiliation_displays.push(display);
         for location in [locations.0, locations.1] {
-            self.cells.index_mut(location.as_index()).assign_elem(NumberlinkCell::TERMINUS {
-                affiliation: Affiliation {
-                    ident: aff_id,
-                    display,
-                }
-            })
+            self.cells.index_mut(location.as_index()).assign_elem(NumberlinkCell::TERMINUS { affiliation: aff_id })
         }
 
         self
