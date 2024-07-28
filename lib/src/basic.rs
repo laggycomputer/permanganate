@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
+use std::num::NonZero;
 use std::ops::{AddAssign, IndexMut};
 
 use itertools::Itertools;
@@ -8,7 +9,7 @@ use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
 
 use crate::common::affiliation::{AffiliationID, CellAffiliation};
-use crate::common::location::{Coord, Location, NumberlinkCell};
+use crate::common::location::{Coord, Dimension, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{SquareStep, Step};
 
@@ -54,7 +55,7 @@ impl SquarePathShape {
 }
 
 pub struct SimpleNumberlinkBoard {
-    dims: (Coord, Coord),
+    dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell>,
     last_used_aff_ident: Option<AffiliationID>,
     affiliation_displays: HashMap<AffiliationID, char>,
@@ -62,20 +63,16 @@ pub struct SimpleNumberlinkBoard {
 
 impl Default for SimpleNumberlinkBoard {
     fn default() -> Self {
-        Self::with_dims((5, 5)).unwrap()
+        Self::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap())).unwrap()
     }
 }
 
 impl SimpleNumberlinkBoard {
-    pub fn with_dims(dims: (Coord, Coord)) -> Result<Self, &'static str> {
-        if dims.0 <= 0 || dims.1 <= 0 {
-            return Err("invalid dims");
-        }
-
+    pub fn with_dims(dims: (Dimension, Dimension)) -> Result<Self, &'static str> {
         Ok(Self {
             dims,
             // row major
-            cells: Array2::from_shape_simple_fn((dims.1, dims.0), NumberlinkCell::default),
+            cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
             last_used_aff_ident: None,
             affiliation_displays: HashMap::new(),
         })
@@ -111,15 +108,15 @@ impl SimpleNumberlinkBoard {
     }
 
     pub(crate) fn affiliation_var(&self, location: Location, affiliation_id: AffiliationID) -> Var {
-        Var::from_index((location.1 * self.dims.0 + location.0) * self.num_affiliations() + affiliation_id)
+        Var::from_index((location.1 * self.dims.0.get() + location.0) * self.num_affiliations() + affiliation_id)
     }
 
     fn shape_var(&self, location: Location, path_shape: SquarePathShape) -> Var {
         Var::from_index(
             // highest possible affiliation var
-            self.dims.1 * self.dims.0 * self.num_affiliations()
+            self.dims.1.get() * self.dims.0.get() * self.num_affiliations()
                 // now, build new index
-                + (location.1 * self.dims.0 + location.0) * SquarePathShape::VARIANTS.len()
+                + (location.1 * self.dims.0.get() + location.0) * SquarePathShape::VARIANTS.len()
                 + SquarePathShape::VARIANTS.iter()
                 .find_position(|shape| **shape == path_shape)
                 .unwrap().0
@@ -141,7 +138,7 @@ impl SimpleNumberlinkBoard {
     pub fn step(&self, loc: Location, direction: SquareStep) -> Option<Location> {
         let new_loc = direction.attempt_from(loc);
 
-        match (0..self.dims.0).contains(&new_loc.0) && (0..self.dims.1).contains(&new_loc.1) {
+        match (0..self.dims.0.get()).contains(&new_loc.0) && (0..self.dims.1.get()).contains(&new_loc.1) {
             true => Some(new_loc),
             false => None
         }
@@ -181,7 +178,7 @@ impl SimpleNumberlinkBoard {
             return None;
         }
 
-        let mut logic = Array2::from_shape_simple_fn((self.dims.1, self.dims.0), CnfFormula::default);
+        let mut logic = Array2::from_shape_simple_fn((self.dims.1.get(), self.dims.0.get()), CnfFormula::default);
         let mut assumptions = Vec::new();
 
         for (index, cell) in self.cells.indexed_iter() {

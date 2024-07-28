@@ -1,10 +1,11 @@
 use std::fmt::{Display, Formatter};
-
+use std::num::NonZero;
 use ndarray::Ix;
 
 use crate::common::affiliation::CellAffiliation;
 
 pub type Coord = usize;
+pub type Dimension = NonZero<Coord>;
 
 #[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
 // x, y
