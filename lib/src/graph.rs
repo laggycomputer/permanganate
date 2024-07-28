@@ -35,6 +35,13 @@ enum AffiliationHolder {
     EDGE { nodes: UnorderedPair<Location> },
 }
 
+impl AffiliationHolder
+{
+    fn from_edge_triple<T: BoardShape>(tuple: &(Node, Node, &Edge<T>)) -> Self {
+        Self::EDGE { nodes: UnorderedPair::from((tuple.0.location, tuple.1.location)) }
+    }
+}
+
 pub struct GeneralNumberlinkBoard<T>
 where
     T: BoardShape,
@@ -97,9 +104,7 @@ where
                     // exactly one incident edge E has the same affiliation
                     formulae.push(CnfFormula::from(exactly_one(
                         self.graph.edges(vertex)
-                            .map(|(vertex_from, vertex_to, edge)| {
-                                self.affiliation_var(AffiliationHolder::EDGE { nodes: UnorderedPair::from((vertex_from.location, vertex_to.location)) }, aff_id).positive()
-                            })
+                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id).positive())
                             .collect_vec()
                     )));
 
@@ -107,58 +112,52 @@ where
                     // or, equivalently, exactly 1 incident edge does *not* have affiliation 0
                     formulae.push(CnfFormula::from(exactly_one(
                         self.graph.edges(vertex)
-                            .map(|(vertex_from, vertex_to, edge)| {
-                                self.affiliation_var(AffiliationHolder::EDGE { nodes: UnorderedPair::from((vertex_from.location, vertex_to.location)) }, 0).negative()
-                            })
+                            .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), 0).negative())
                             .collect_vec()
                     )));
                 }
                 NumberlinkCell::EMPTY => {
-                    // here, V must have one nonzero affiliation and exactly two incident edges with the same affiliation
-                    // every other incident edge has no affiliation
+                    // V must have nonzero affiliation
+                    assumptions.push(self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, 0).negative());
+
+                    // V has only one affiliation
+                    formulae.push(CnfFormula::from(exactly_one(
+                        self.valid_non_null_affiliations()
+                            .map(|aff_id| self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, aff_id).positive())
+                            .collect_vec()
+                    )));
+
                     let all_incident = self.graph.edges(vertex)
-                        .map(|(n1, n2, e)| (n1, n2, *e))
-                        .collect::<HashSet<(Node, Node, Edge<T>)>>();
+                        .collect::<HashSet<(Node, Node, &Edge<T>)>>();
 
-                    let paths_to_truth = all_incident.iter().combinations(2)
-                        // for two incident edges E_1, E_2...
-                        .flat_map(|select_two| {
-                            // get the other incident edges
-                            let select_two_deref = HashSet::from_iter(select_two.iter().map(|v| **v));
-                            let others = all_incident.difference(&select_two_deref).collect_vec();
+                    for aff_id in self.valid_non_null_affiliations() {
+                        let mut formula = Vec::new();
+                        {
+                            let mut terms = Vec::with_capacity(1 + all_incident.len());
+                            // V having affiliation A...
+                            terms.push(self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, aff_id).negative());
 
-                            self.valid_non_null_affiliations()
-                                // for some affiliation A...
-                                .map(|aff_id| {
-                                    // with these iterables, we can now construct a unique "path to truth"
-                                    let mut requirements = Vec::with_capacity(1 + all_incident.len());
-
-                                    // V has affiliation A
-                                    requirements.push(self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, aff_id).positive());
-
-                                    // E_1, E_2 have affiliation A
-                                    requirements.extend(select_two.iter()
-                                        .map(|(n1, n2, e)| self.affiliation_var(
-                                            AffiliationHolder::EDGE { nodes: UnorderedPair::from((n1.location, n2.location)) }, aff_id)
-                                            .positive())
-                                        .collect_vec());
-
-                                    // the other incident edges have affiliation 0
-                                    requirements.extend(others.iter()
-                                        .map(|(n1, n2, e)| self.affiliation_var(
-                                            AffiliationHolder::EDGE { nodes: UnorderedPair::from((n1.location, n2.location)) }, 0)
-                                            .positive())
-                                        .collect_vec());
-
-                                    requirements
-                                })
+                            // implies at least one incident edge E_1 has the same affiliation
+                            terms.extend(all_incident.iter()
+                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id))
                                 .collect_vec()
-                        });
+                            );
 
-                    let paths_sum_of_product = paths_to_truth.multi_cartesian_product()
-                        .collect_vec();
+                            formula.push(terms)
+                        }
 
-                    formulae.push(CnfFormula::from(paths_sum_of_product));
+                        // todo: consider adding (V does not have affiliation A) => (no incident edge has affiliation A)
+
+                        for (n1, n2, e1) in all_incident {
+                            // E_1 having affiliation A implies that another E_2 incident to V has affiliation A
+                            // or, if we let X = (E_1 has affiliation A), Y = (E_n has affiliation A), and so on...
+                            // X => Y + Z + ...
+                            // !X + Y + Z + ...
+                            let terms = all_incident.iter()
+                                .map(|triple| self.affiliation_var(AffiliationHolder::from_edge_triple(triple), aff_id));
+                        }
+                        // however, no three such E exist
+                    }
                 }
                 _ => {}
             }
