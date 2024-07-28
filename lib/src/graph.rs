@@ -7,7 +7,7 @@ use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
-use varisat::{CnfFormula, Lit, Var};
+use varisat::{CnfFormula, Lit, Solver, Var};
 
 use crate::common::affiliation::AffiliationID;
 use crate::common::location::{Dimension, Location, NumberlinkCell};
@@ -15,7 +15,7 @@ use crate::common::logic::exactly_one;
 use crate::common::shape::{BoardShape, SquareStep, Step};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
-struct Node {
+pub(crate) struct Node {
     location: Location,
     cell: NumberlinkCell,
 }
@@ -183,11 +183,31 @@ where
         }
 
         for edge_triple in self.graph.all_edges() {
-            // an edge having a non-null affiliation <=> its vertices have the same affiliation
             for aff in self.valid_non_null_affiliations() {
+                // an edge having a non-null affiliation <=> its vertices have the same affiliation
+                // let this be A <=> BC
+                // A => BC = !A + BC = (!A + B)(!A + C)
+                // BC => A = !(BC) + A = !B + !C + A
+                // together, A <=> BC = (!A + B)(!A + C)(A + !B + !C)
+                let a = self.affiliation_var(HasAffiliation::from(&edge_triple), aff);
+                let b = self.affiliation_var(HasAffiliation::from(edge_triple.0), aff);
+                let c = self.affiliation_var(HasAffiliation::from(edge_triple.1), aff);
 
+                formulae.push(CnfFormula::from(vec![
+                    vec![a.negative(), b.positive()],
+                    vec![a.negative(), c.positive()],
+                    vec![a.positive(), b.negative(), c.negative()],
+                ]))
             }
         }
+
+        let mut solver = Solver::new();
+        formulae.into_iter().for_each(|formula| solver.add_formula(&formula));
+        solver.assume(assumptions.as_slice());
+        let solve_result = solver.solve();
+        println!("{:?}", solve_result);
+        // let solved = solver.model().unwrap();
+        // println!("{:?}", solved);
     }
 }
 

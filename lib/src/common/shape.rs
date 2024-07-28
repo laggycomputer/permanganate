@@ -1,6 +1,7 @@
 use std::hash::Hash;
 
 use itertools::Itertools;
+use ndarray::Array2;
 use strum::VariantArray;
 
 use crate::common::location::Location;
@@ -12,6 +13,7 @@ pub trait Step {
     where
         Self: Sized;
     fn invert(&self) -> Self;
+    fn print(board: Array2<char>) -> String;
 }
 
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug)]
@@ -47,6 +49,19 @@ impl Step for SquareStep {
             Self::LEFT => Self::RIGHT,
             Self::RIGHT => Self::LEFT,
         }
+    }
+
+    fn print(board: Array2<char>) -> String {
+        let mut out = String::with_capacity(board.nrows() * (board.ncols() + 1));
+
+        for row in board.rows() {
+            for col in row {
+                out.push(*col);
+            }
+            out.push('\n');
+        }
+
+        out
     }
 }
 
@@ -94,6 +109,10 @@ impl Step for HexStep {
             Self::DOWNLEFT => Self::UPRIGHT,
             Self::LEFTUP => Self::RIGHTDOWN,
         }
+    }
+
+    fn print(board: Array2<char>) -> String {
+        todo!()
     }
 }
 
