@@ -44,8 +44,8 @@ impl Step for SquareStep {
         match self {
             Self::UP => Self::DOWN,
             Self::DOWN => Self::UP,
-            Self::LEFT => Self::LEFT,
-            Self::RIGHT => Self::RIGHT,
+            Self::LEFT => Self::RIGHT,
+            Self::RIGHT => Self::LEFT,
         }
     }
 }
