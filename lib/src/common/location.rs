@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::num::NonZero;
 use ndarray::Ix;
 
-use crate::common::affiliation::CellAffiliation;
+use crate::common::affiliation::Affiliation;
 
 pub type Coord = usize;
 pub type Dimension = NonZero<Coord>;
@@ -28,8 +28,8 @@ impl From<(Ix, Ix)> for Location {
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub(crate) enum NumberlinkCell {
-    TERMINUS { affiliation: CellAffiliation },
-    PATH { affiliation: CellAffiliation },
+    TERMINUS { affiliation: Affiliation },
+    PATH { affiliation: Affiliation },
     #[default]
     EMPTY,
 }

@@ -8,7 +8,7 @@ use ndarray::{Array2, AssignElem};
 use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
 
-use crate::common::affiliation::{AffiliationID, CellAffiliation};
+use crate::common::affiliation::{AffiliationID, Affiliation};
 use crate::common::location::{Coord, Dimension, Location, NumberlinkCell};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{SquareStep, Step};
@@ -126,7 +126,7 @@ impl SimpleNumberlinkBoard {
     fn _add_termini(&mut self, aff_id: AffiliationID, display: char, locations: (Location, Location)) {
         for endpoint_loc in [locations.0, locations.1] {
             self.cells.index_mut((endpoint_loc.1, endpoint_loc.0)).assign_elem(NumberlinkCell::TERMINUS {
-                affiliation: CellAffiliation { ident: aff_id, display }
+                affiliation: Affiliation { ident: aff_id, display }
             });
         }
 
@@ -289,7 +289,7 @@ impl SimpleNumberlinkBoard {
                             solved.get(var.index()).unwrap().is_positive()
                         }).unwrap();
                     new_board.cells.index_mut(index).assign_elem(NumberlinkCell::PATH {
-                        affiliation: CellAffiliation {
+                        affiliation: Affiliation {
                             ident: solved_affiliation,
                             display: *self.affiliation_displays.get(&solved_affiliation).unwrap(),
                         }
