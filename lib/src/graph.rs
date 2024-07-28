@@ -122,10 +122,16 @@ where
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum BuilderInvalidReason {
+    FeatureOutOfBounds,
+}
+
 pub struct SquareNumberlinkBoardBuilder {
     // width, height
     pub dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell>,
+    invalid_reasons: Vec<BuilderInvalidReason>,
     // TODO
     edge_blacklist: HashSet<UnorderedPair<Location>>,
     node_blacklist: HashSet<Location>,
@@ -146,6 +152,7 @@ impl SquareNumberlinkBoardBuilder {
             dims,
             cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
 
+            invalid_reasons: Default::default(),
             edge_blacklist: Default::default(),
             node_blacklist: Default::default(),
             bridges: Default::default(),
@@ -155,6 +162,17 @@ impl SquareNumberlinkBoardBuilder {
     }
 
     pub fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut SquareNumberlinkBoardBuilder {
+        if !self.invalid_reasons.is_empty() {
+            return self;
+        }
+
+        for location in [locations.0, locations.1] {
+            if location.0 >= self.dims.0.get() || location.1 >= self.dims.1.get() {
+                self.invalid_reasons.push(BuilderInvalidReason::FeatureOutOfBounds);
+                return self;
+            }
+        }
+
         // non-null affiliation IDs start at 1
         let aff_id = self.affiliation_displays.len() + 1;
         self.affiliation_displays.push(display);
@@ -170,7 +188,11 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub fn build(&self) -> GeneralNumberlinkBoard<SquareStep> {
+    pub fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
+        if !self.invalid_reasons.is_empty() {
+            return Err(self.invalid_reasons.clone());
+        }
+
         let mut graph = UnGraphMap::with_capacity(
             // naively allocate for a complete grid of this size, which usually isn't too far off
             self.cells.len(),
@@ -209,10 +231,10 @@ impl SquareNumberlinkBoardBuilder {
         affiliation_displays.push('.');
         affiliation_displays.extend(self.affiliation_displays.clone());
 
-        GeneralNumberlinkBoard {
+        Ok(GeneralNumberlinkBoard {
             graph,
             dims: self.dims,
             affiliation_displays,
-        }
+        })
     }
 }
