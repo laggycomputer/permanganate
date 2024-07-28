@@ -80,7 +80,6 @@ where
     }
 
     fn solve(mut self) {
-        // every other connected edge has no affiliation
         // todo: every non-terminus vertex has an affiliation and exactly two connected edges with the same affiliation
         // every other connected edge has no affiliation
         // an edge having an affiliation <=> its vertices have the same affiliation
@@ -89,14 +88,32 @@ where
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
         for vertex in self.graph.nodes() {
+            // let this vertex be V
             match vertex.cell {
-                // every terminus vertex has the given affiliation and no other
                 NumberlinkCell::TERMINUS { affiliation: CellAffiliation { ident: aff_id, .. } } => {
+                    // the affiliation of V is the one already assigned, and no other; we tell the solver to assume this is so
                     assumptions.extend(self.valid_non_null_affiliations()
                         .map(|maybe_aff| self.affiliation_var(AffiliationHolder::NODE { location: vertex.location }, maybe_aff)
                             .lit(maybe_aff == aff_id)));
 
-                    // every terminus vertex has exactly one connected edge and one neighbor with the same affiliation
+                    // exactly one incident edge E has the same affiliation
+                    formulae.push(CnfFormula::from(exactly_one(
+                        self.graph.edges(vertex)
+                            .map(|(vertex_from, vertex_to, edge)| {
+                                self.affiliation_var(AffiliationHolder::EDGE { nodes: UnorderedPair::from((vertex_from.location, vertex_to.location)) }, aff_id).positive()
+                            })
+                            .collect_vec()
+                    )));
+
+                    // V has deg(V) - 1 incident edges with affiliation 0 (unaffiliated)
+                    // or, equivalently, exactly 1 incident edge does *not* have affiliation 0
+                    formulae.push(CnfFormula::from(exactly_one(
+                        self.graph.edges(vertex)
+                            .map(|(vertex_from, vertex_to, edge)| {
+                                self.affiliation_var(AffiliationHolder::EDGE { nodes: UnorderedPair::from((vertex_from.location, vertex_to.location)) }, 0).negative()
+                            })
+                            .collect_vec()
+                    )));
                 }
                 NumberlinkCell::EMPTY => {}
                 _ => {}
