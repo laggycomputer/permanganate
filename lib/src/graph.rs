@@ -90,8 +90,10 @@ where
 
                 // offset out of addressing space for nodes
                 self.dims.1.get() * self.dims.0.get() * self.valid_affiliations().len()
-                    + (lowest_index_location.1 * self.dims.0.get() + lowest_index_location.0)
-                    * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0
+                    + (
+                    (lowest_index_location.1 * self.dims.0.get() + lowest_index_location.0)
+                        * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0)
+                    * self.valid_affiliations().len() + affiliation
             }
         })
     }
