@@ -191,7 +191,7 @@ where
         }
 
         for edge_triple in self.graph.all_edges() {
-            // this edge E has an affiliation, which may be 0
+            // this edge E has exactly one affiliation, which may be 0
             formulae.push(CnfFormula::from(exactly_one(
                 self.valid_affiliations()
                     .map(|aff| self.affiliation_var(HasAffiliation::from(&edge_triple), aff).positive())
