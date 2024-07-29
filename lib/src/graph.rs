@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
+use std::convert::identity;
 use std::fmt::{Display, Formatter};
 use std::num::NonZero;
 use std::ops::{IndexMut, Range};
