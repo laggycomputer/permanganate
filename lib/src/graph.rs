@@ -219,7 +219,6 @@ where
         solver.assume(assumptions.into_iter().as_ref());
         solver.solve().unwrap();
         let model = solver.model().unwrap();
-        println!("{:?}", model);
 
         let mut solved_graph: UnGraphMap<Node, Edge<T>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
         for existing_node in self.graph.node_identifiers() {
