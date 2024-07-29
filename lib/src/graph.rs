@@ -318,7 +318,6 @@ impl SquareNumberlinkBoardBuilder {
             cell: *self.cells.get(ind).unwrap(),
         });
 
-
         for x in 0..self.dims.0.get() {
             for y in 0..self.dims.1.get() {
                 let location = Location(x, y);
