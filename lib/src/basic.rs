@@ -58,7 +58,7 @@ impl SquarePathShape {
 #[derive(Clone)]
 pub struct SimpleNumberlinkBoard {
     dims: (Dimension, Dimension),
-    cells: Array2<NumberlinkCell>,
+    cells: Array2<NumberlinkCell<SquareStep>>,
     last_used_affiliation: Option<AffiliationID>,
     affiliation_displays: HashMap<AffiliationID, char>,
 }
@@ -322,6 +322,7 @@ impl Display for SimpleNumberlinkBoard {
                     self.affiliation_displays.get(&affiliation).unwrap().to_ascii_lowercase()
                 },
                 NumberlinkCell::EMPTY => '.',
+                _ => unreachable!(),
             }).to_vec().into_iter().join(""));
             ret.push('\n');
         }

@@ -1,23 +1,26 @@
+use std::collections::HashMap;
 use std::hash::Hash;
+use std::ops::Index;
 
 use itertools::Itertools;
-use ndarray::{Array2, AssignElem};
+use ndarray::Array2;
 use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
-use crate::common::cell::NumberlinkCell;
+
+use crate::common::cell::SolvedNumberlinkCell;
 use crate::common::location::{Dimension, Location};
 use crate::graph::{Edge, Node};
 
-pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash {
+pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
     fn attempt_from(&self, location: Location) -> Location;
     // directions which result in an index increase in a 2d array representation
     fn forward_edge_directions() -> &'static [Self];
     fn invert(&self) -> Self;
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node, Edge<Self>>) -> Array2<NumberlinkCell>;
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<SolvedNumberlinkCell<Self>>;
     fn print(board: Array2<char>) -> String;
 }
 
-#[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub enum SquareStep {
     UP,
     DOWN,
@@ -49,11 +52,20 @@ impl Step for SquareStep {
         }
     }
 
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node, Edge<Self>>) -> Array2<NumberlinkCell> {
-        let mut ret = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default);
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<SolvedNumberlinkCell<Self>> {
+        let mut ret: Array2<Option<SolvedNumberlinkCell<Self>>> = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), || None);
 
         for (index, ptr) in ret.indexed_iter_mut() {
-            ptr.assign_elem(board.nodes().find(|n| n.location == Location::from(index)).unwrap().cell)
+            let relevant_nodes = board.nodes()
+                .filter(|n| n.location == Location::from(index))
+                .collect_vec();
+            assert!(relevant_nodes.len() > 1);
+
+            if relevant_nodes.len() == 1 {
+                let mut exits: HashMap<Self, bool> = HashMap::new();
+
+                for edge in board.edges(*relevant_nodes.index(0)) {}
+            }
         }
 
         ret
@@ -78,7 +90,7 @@ impl Step for SquareStep {
 //   0   1   2   3
 // 0   1   2   3
 //   0   1   2   3
-#[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub enum HexStep {
     UP,
     UPRIGHT,
@@ -116,7 +128,7 @@ impl Step for HexStep {
         }
     }
 
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node, Edge<Self>>) -> Array2<NumberlinkCell> {
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<SolvedNumberlinkCell<Self>> {
         todo!()
     }
 

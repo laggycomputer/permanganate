@@ -19,9 +19,9 @@ use crate::common::logic::exactly_one;
 use crate::common::shape::{BoardShape, SquareStep, Step};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub(crate) struct Node {
+pub(crate) struct Node<Sh: BoardShape> {
     pub(crate) location: Location,
-    pub(crate) cell: NumberlinkCell,
+    pub(crate) cell: NumberlinkCell<Sh>,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -30,6 +30,7 @@ where
     Sh: BoardShape,
 {
     affiliation: AffiliationID,
+    // direction from lower indexed edge
     direction: Sh,
 }
 
@@ -39,16 +40,16 @@ enum HasAffiliation<Sh> {
     EDGE { nodes: UnorderedPair<Location>, direction: Sh },
 }
 
-impl<Sh: BoardShape> From<&(Node, Node, &Edge<Sh>)> for HasAffiliation<Sh>
+impl<Sh: BoardShape> From<&(Node<Sh>, Node<Sh>, &Edge<Sh>)> for HasAffiliation<Sh>
 {
-    fn from(value: &(Node, Node, &Edge<Sh>)) -> Self {
+    fn from(value: &(Node<Sh>, Node<Sh>, &Edge<Sh>)) -> Self {
         Self::EDGE { nodes: UnorderedPair::from((value.0.location, value.1.location)), direction: value.2.direction }
     }
 }
 
-impl<Sh> From<Node> for HasAffiliation<Sh>
+impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
 {
-    fn from(value: Node) -> Self {
+    fn from(value: Node<Sh>) -> Self {
         Self::NODE { location: value.location }
     }
 }
@@ -57,7 +58,7 @@ pub struct GeneralNumberlinkBoard<Sh>
 where
     Sh: BoardShape,
 {
-    graph: UnGraphMap<Node, Edge<Sh>>,
+    graph: UnGraphMap<Node<Sh>, Edge<Sh>>,
     dims: (Dimension, Dimension),
     affiliation_displays: Vec<char>,
 }
@@ -140,7 +141,7 @@ where
                     )));
 
                     let all_incident = self.graph.edges(vertex)
-                        .collect::<HashSet<(Node, Node, &Edge<Sh>)>>();
+                        .collect::<HashSet<(Node<Sh>, Node<Sh>, &Edge<Sh>)>>();
 
                     for aff in self.valid_non_null_affiliations() {
                         {
@@ -221,7 +222,7 @@ where
         solver.solve().unwrap();
         let model = solver.model().unwrap();
 
-        let mut solved_graph: UnGraphMap<Node, Edge<Sh>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
+        let mut solved_graph: UnGraphMap<Node<Sh>, Edge<Sh>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
         for existing_node in self.graph.node_identifiers() {
             let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(existing_node), false);
 
@@ -270,7 +271,7 @@ pub enum BuilderInvalidReason {
 pub struct SquareNumberlinkBoardBuilder {
     // width, height
     pub dims: (Dimension, Dimension),
-    cells: Array2<NumberlinkCell>,
+    cells: Array2<NumberlinkCell<SquareStep>>,
     invalid_reasons: Vec<BuilderInvalidReason>,
     // TODO
     edge_blacklist: HashSet<UnorderedPair<Location>>,
