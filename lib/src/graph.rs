@@ -104,7 +104,7 @@ where
             match vertex.cell {
                 NumberlinkCell::TERMINUS { affiliation: aff } => {
                     // the affiliation of V is the one already assigned, and no other; we tell the solver to assume this is so
-                    assumptions.extend(self.valid_non_null_affiliations()
+                    assumptions.extend(self.valid_affiliations()
                         .map(|maybe_aff| self.affiliation_var(HasAffiliation::from(vertex), maybe_aff).lit(maybe_aff == aff)));
 
                     // exactly one incident edge E has the same affiliation
