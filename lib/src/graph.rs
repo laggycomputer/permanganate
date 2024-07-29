@@ -212,7 +212,7 @@ where
 
         let mut solver = Solver::new();
         formulae.into_iter().for_each(|formula| solver.add_formula(&formula));
-        solver.assume(assumptions.as_slice());
+        solver.assume(assumptions.into_iter().as_ref());
         let solve_result = solver.solve();
         println!("{:?}", solve_result);
         if solve_result.is_ok_and(identity) {
