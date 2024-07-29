@@ -11,5 +11,7 @@ fn main() {
         .build()
         .unwrap();
 
+    println!("{}", board);
+
     board.solve();
 }

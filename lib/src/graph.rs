@@ -207,8 +207,12 @@ where
         solver.assume(assumptions.as_slice());
         let solve_result = solver.solve();
         println!("{:?}", solve_result);
-        // let solved = solver.model().unwrap();
-        // println!("{:?}", solved);
+        if solve_result.is_ok_and(identity) {
+            let solved = solver.model().unwrap();
+            println!("{:?}", solved);
+        } else {
+            println!("{:?}", solver.failed_core());
+        }
     }
 }
 
