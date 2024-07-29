@@ -185,6 +185,13 @@ where
         }
 
         for edge_triple in self.graph.all_edges() {
+            // this edge E has an affiliation, which may be 0
+            formulae.push(CnfFormula::from(exactly_one(
+                self.valid_affiliations()
+                    .map(|aff| self.affiliation_var(HasAffiliation::from(&edge_triple), aff).positive())
+                    .collect_vec()
+            )));
+
             for aff in self.valid_non_null_affiliations() {
                 // an edge having a non-null affiliation <=> its vertices have the same affiliation
                 // let this be A <=> BC
