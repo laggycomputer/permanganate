@@ -141,7 +141,7 @@ where
             .collect_vec()
     }
 
-    fn direction_to(a: Location, b: Location) -> Option<Self <>> {
+    fn direction_to(a: Location, b: Location) -> Option<Self> {
         Self::VARIANTS.iter().find(|dir| dir.attempt_from(a) == b).and_then(|dir| Some(*dir))
     }
 
