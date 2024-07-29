@@ -100,7 +100,7 @@ where
             .unwrap()
     }
 
-    pub fn solve(mut self) -> Array2<NumberlinkCell> {
+    pub fn solve(mut self) -> Self {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
@@ -244,6 +244,9 @@ where
         // }
 
         T::gph_to_array(self.dims, &solved_graph)
+
+        self.graph = solved_graph;
+        self
     }
 }
 
