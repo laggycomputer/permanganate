@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
+use std::fmt::{Display, Formatter};
 use std::num::NonZero;
 use std::ops::{IndexMut, Range};
 
@@ -16,12 +17,12 @@ use crate::common::shape::{BoardShape, SquareStep, Step};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub(crate) struct Node {
-    location: Location,
-    cell: NumberlinkCell,
+    pub(crate) location: Location,
+    pub(crate) cell: NumberlinkCell,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
-struct Edge<T>
+pub(crate) struct Edge<T>
 where
     T: BoardShape,
 {
@@ -208,6 +209,20 @@ where
         println!("{:?}", solve_result);
         // let solved = solver.model().unwrap();
         // println!("{:?}", solved);
+    }
+}
+
+impl<T: BoardShape> Display for GeneralNumberlinkBoard<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", T::print(T::gph_to_array(self.dims, &self.graph).map(|cell| match cell {
+            NumberlinkCell::TERMINUS { affiliation } => {
+                self.affiliation_displays.get(*affiliation).unwrap().to_ascii_uppercase()
+            }
+            NumberlinkCell::PATH { affiliation } => {
+                self.affiliation_displays.get(*affiliation).unwrap().to_ascii_lowercase()
+            }
+            NumberlinkCell::EMPTY => '.',
+        })))
     }
 }
 

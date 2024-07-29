@@ -1,18 +1,19 @@
 use std::hash::Hash;
 
 use itertools::Itertools;
-use ndarray::Array2;
+use ndarray::{Array2, AssignElem};
+use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
 
-use crate::common::location::Location;
+use crate::common::location::{Dimension, Location, NumberlinkCell};
+use crate::graph::{Edge, Node};
 
-pub trait Step {
+pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash {
     fn attempt_from(&self, location: Location) -> Location;
     // directions which result in an index increase in a 2d array representation
-    fn forward_edge_directions() -> &'static [Self]
-    where
-        Self: Sized;
+    fn forward_edge_directions() -> &'static [Self];
     fn invert(&self) -> Self;
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node, Edge<Self>>) -> Array2<NumberlinkCell>;
     fn print(board: Array2<char>) -> String;
 }
 
@@ -35,10 +36,7 @@ impl Step for SquareStep {
         }
     }
 
-    fn forward_edge_directions() -> &'static [Self]
-    where
-        Self: Sized,
-    {
+    fn forward_edge_directions() -> &'static [Self] {
         &[Self::DOWN, Self::RIGHT]
     }
 
@@ -49,6 +47,16 @@ impl Step for SquareStep {
             Self::LEFT => Self::RIGHT,
             Self::RIGHT => Self::LEFT,
         }
+    }
+
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node, Edge<Self>>) -> Array2<NumberlinkCell> {
+        let mut ret = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default);
+
+        for (index, ptr) in ret.indexed_iter_mut() {
+            ptr.assign_elem(board.nodes().find(|n| n.location == Location::from(index)).unwrap().cell)
+        }
+
+        ret
     }
 
     fn print(board: Array2<char>) -> String {
@@ -70,7 +78,7 @@ impl Step for SquareStep {
 //   0   1   2   3
 // 0   1   2   3
 //   0   1   2   3
-#[derive(Copy, Clone, VariantArray)]
+#[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug)]
 pub enum HexStep {
     UP,
     UPRIGHT,
@@ -93,10 +101,7 @@ impl Step for HexStep {
         }
     }
 
-    fn forward_edge_directions() -> &'static [Self]
-    where
-        Self: Sized,
-    {
+    fn forward_edge_directions() -> &'static [Self] {
         &[Self::DOWN, Self::RIGHTDOWN, Self::DOWNLEFT]
     }
 
@@ -111,24 +116,24 @@ impl Step for HexStep {
         }
     }
 
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node, Edge<Self>>) -> Array2<NumberlinkCell> {
+        todo!()
+    }
+
     fn print(board: Array2<char>) -> String {
         todo!()
     }
 }
 
-pub trait BoardShape: Copy + Step + VariantArray + PartialEq + Eq + Hash {
-    fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>
-    where
-        Self: Sized;
-    fn direction_to(a: Location, b: Location) -> Option<Self>
-    where
-        Self: Sized;
+pub trait BoardShape: Step {
+    fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>;
+    fn direction_to(a: Location, b: Location) -> Option<Self>;
     fn ensure_forward(&self) -> Self;
 }
 
 impl<T> BoardShape for T
 where
-    T: Copy + Step + VariantArray + PartialEq + Eq + Hash,
+    T: Step,
 {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
         Self::VARIANTS.iter()
