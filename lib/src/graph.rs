@@ -33,19 +33,19 @@ where
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash)]
-enum HasAffiliation {
+enum HasAffiliation<T> {
     NODE { location: Location },
-    EDGE { nodes: UnorderedPair<Location> },
+    EDGE { nodes: UnorderedPair<Location>, direction: T },
 }
 
-impl<T: BoardShape> From<&(Node, Node, &Edge<T>)> for HasAffiliation
+impl<T: BoardShape> From<&(Node, Node, &Edge<T>)> for HasAffiliation<T>
 {
     fn from(value: &(Node, Node, &Edge<T>)) -> Self {
-        Self::EDGE { nodes: UnorderedPair::from((value.0.location, value.1.location)) }
+        Self::EDGE { nodes: UnorderedPair::from((value.0.location, value.1.location)), direction: value.2.direction }
     }
 }
 
-impl From<Node> for HasAffiliation
+impl<T> From<Node> for HasAffiliation<T>
 {
     fn from(value: Node) -> Self {
         Self::NODE { location: value.location }
@@ -73,30 +73,28 @@ where
         1..self.affiliation_displays.len()
     }
 
-    fn affiliation_var(&self, subject: HasAffiliation, affiliation: AffiliationID) -> Var {
+    fn affiliation_var(&self, subject: HasAffiliation<T>, affiliation: AffiliationID) -> Var {
         Var::from_index(match subject {
             HasAffiliation::NODE { location } => {
                 (location.1 * self.dims.0.get() + location.0) * self.valid_affiliations().len() + affiliation
             }
-            HasAffiliation::EDGE { nodes } => {
+            HasAffiliation::EDGE { nodes, direction } => {
                 // #[derive(Ord)] on Node will give the node with lower index first here
                 let lower_index_location = min(nodes.0, nodes.1);
-
-                let actual_dir = T::direction_to(nodes.0, nodes.1).unwrap().ensure_forward();
 
                 // offset out of addressing space for nodes
                 self.dims.1.get() * self.dims.0.get() * self.valid_affiliations().len()
                     // offset for location...
                     + ((lower_index_location.1 * self.dims.0.get() + lower_index_location.0)
                     // then edge "direction"...
-                    * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0)
+                    * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == direction.ensure_forward()).unwrap().0)
                     // then affiliation
                     * self.valid_affiliations().len() + affiliation
             }
         })
     }
 
-    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation, can_be_null: bool) -> AffiliationID {
+    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation<T>, can_be_null: bool) -> AffiliationID {
         (if can_be_null { self.valid_affiliations() } else { self.valid_non_null_affiliations() })
             .find(|aff| model.get(self.affiliation_var(subject, *aff).index()).unwrap().is_positive())
             .unwrap()
