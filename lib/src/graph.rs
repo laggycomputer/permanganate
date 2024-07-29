@@ -87,6 +87,7 @@ where
 
                 let actual_dir = T::direction_to(nodes.0, nodes.1).unwrap().ensure_forward();
 
+                // offset out of addressing space for nodes
                 self.dims.1.get() * self.dims.0.get() * self.valid_affiliations().len()
                     + (lowest_index_location.1 * self.dims.0.get() + lowest_index_location.0)
                     * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0
@@ -104,8 +105,7 @@ where
                 NumberlinkCell::TERMINUS { affiliation: aff } => {
                     // the affiliation of V is the one already assigned, and no other; we tell the solver to assume this is so
                     assumptions.extend(self.valid_non_null_affiliations()
-                        .map(|maybe_aff| self.affiliation_var(HasAffiliation::from(vertex), maybe_aff)
-                            .lit(maybe_aff == aff)));
+                        .map(|maybe_aff| self.affiliation_var(HasAffiliation::from(vertex), maybe_aff).lit(maybe_aff == aff)));
 
                     // exactly one incident edge E has the same affiliation
                     formulae.push(CnfFormula::from(exactly_one(
@@ -155,13 +155,13 @@ where
                         {
                             formulae.push(CnfFormula::from(all_incident.iter()
                                 .map(|e1_triple| {
-                                    // some incident E_1 having affiliation A implies that another E_2 incident to V has affiliation A
-                                    // or, if we let X = (E_1 has affiliation A), Y = (E_n has affiliation A), and so on...
+                                    // some incident E_0 having affiliation A implies that another E incident to V has affiliation A
+                                    // or, if we let X = (E_0 has affiliation A), Y = (E_1 has affiliation A), Z = (E_2 has affiliation A), and so on...
                                     // X => Y + Z + ...
                                     // = !X + Y + Z + ...
-                                    // in other words, the variable is positive unless E_n is E_1
+                                    // in other words, the variable is positive for all incident E unless E is E_1
                                     all_incident.iter()
-                                        .map(|en_triple| self.affiliation_var(HasAffiliation::from(en_triple), aff).lit(e1_triple != en_triple))
+                                        .map(|e_triple| self.affiliation_var(HasAffiliation::from(e_triple), aff).lit(e1_triple != e_triple))
                                         .collect_vec()
                                 })));
                         }
@@ -173,8 +173,8 @@ where
                             .map(|selection| selection.iter()
                                 // for each of these three, generate the literal stating its affiliation is not A
                                 .map(|e_triple| self.affiliation_var(HasAffiliation::from(*e_triple), aff).negative())
-                                .collect_vec())
-                            .collect_vec();
+                                .collect_vec()
+                            );
 
                         formulae.push(CnfFormula::from(no_three_clauses));
                     }
