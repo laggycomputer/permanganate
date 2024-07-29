@@ -24,46 +24,46 @@ pub(crate) struct Node {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
-pub(crate) struct Edge<T>
+pub(crate) struct Edge<Sh>
 where
-    T: BoardShape,
+    Sh: BoardShape,
 {
     affiliation: AffiliationID,
-    direction: T,
+    direction: Sh,
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash)]
-enum HasAffiliation<T> {
+enum HasAffiliation<Sh> {
     NODE { location: Location },
-    EDGE { nodes: UnorderedPair<Location>, direction: T },
+    EDGE { nodes: UnorderedPair<Location>, direction: Sh },
 }
 
-impl<T: BoardShape> From<&(Node, Node, &Edge<T>)> for HasAffiliation<T>
+impl<Sh: BoardShape> From<&(Node, Node, &Edge<Sh>)> for HasAffiliation<Sh>
 {
-    fn from(value: &(Node, Node, &Edge<T>)) -> Self {
+    fn from(value: &(Node, Node, &Edge<Sh>)) -> Self {
         Self::EDGE { nodes: UnorderedPair::from((value.0.location, value.1.location)), direction: value.2.direction }
     }
 }
 
-impl<T> From<Node> for HasAffiliation<T>
+impl<Sh> From<Node> for HasAffiliation<Sh>
 {
     fn from(value: Node) -> Self {
         Self::NODE { location: value.location }
     }
 }
 
-pub struct GeneralNumberlinkBoard<T>
+pub struct GeneralNumberlinkBoard<Sh>
 where
-    T: BoardShape,
+    Sh: BoardShape,
 {
-    graph: UnGraphMap<Node, Edge<T>>,
+    graph: UnGraphMap<Node, Edge<Sh>>,
     dims: (Dimension, Dimension),
     affiliation_displays: Vec<char>,
 }
 
-impl<T> GeneralNumberlinkBoard<T>
+impl<Sh> GeneralNumberlinkBoard<Sh>
 where
-    T: BoardShape,
+    Sh: BoardShape,
 {
     fn valid_affiliations(&self) -> Range<AffiliationID> {
         0..self.affiliation_displays.len()
@@ -73,7 +73,7 @@ where
         1..self.affiliation_displays.len()
     }
 
-    fn affiliation_var(&self, subject: HasAffiliation<T>, affiliation: AffiliationID) -> Var {
+    fn affiliation_var(&self, subject: HasAffiliation<Sh>, affiliation: AffiliationID) -> Var {
         Var::from_index(match subject {
             HasAffiliation::NODE { location } => {
                 (location.1 * self.dims.0.get() + location.0) * self.valid_affiliations().len() + affiliation
@@ -87,14 +87,14 @@ where
                     // offset for location...
                     + ((lower_index_location.1 * self.dims.0.get() + lower_index_location.0)
                     // then edge "direction"...
-                    * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == direction.ensure_forward()).unwrap().0)
+                    * Sh::forward_edge_directions().len() + Sh::forward_edge_directions().iter().find_position(|dir| **dir == direction.ensure_forward()).unwrap().0)
                     // then affiliation
                     * self.valid_affiliations().len() + affiliation
             }
         })
     }
 
-    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation<T>, can_be_null: bool) -> AffiliationID {
+    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation<Sh>, can_be_null: bool) -> AffiliationID {
         (if can_be_null { self.valid_affiliations() } else { self.valid_non_null_affiliations() })
             .find(|aff| model.get(self.affiliation_var(subject, *aff).index()).unwrap().is_positive())
             .unwrap()
@@ -139,7 +139,7 @@ where
                     )));
 
                     let all_incident = self.graph.edges(vertex)
-                        .collect::<HashSet<(Node, Node, &Edge<T>)>>();
+                        .collect::<HashSet<(Node, Node, &Edge<Sh>)>>();
 
                     for aff in self.valid_non_null_affiliations() {
                         {
@@ -220,7 +220,7 @@ where
         solver.solve().unwrap();
         let model = solver.model().unwrap();
 
-        let mut solved_graph: UnGraphMap<Node, Edge<T>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
+        let mut solved_graph: UnGraphMap<Node, Edge<Sh>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
         for existing_node in self.graph.node_identifiers() {
             let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(existing_node), false);
 
@@ -247,9 +247,9 @@ where
     }
 }
 
-impl<T: BoardShape> Display for GeneralNumberlinkBoard<T> {
+impl<Sh: BoardShape> Display for GeneralNumberlinkBoard<Sh> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", T::print(T::gph_to_array(self.dims, &self.graph).map(|cell| match cell {
+        write!(f, "{}", Sh::print(Sh::gph_to_array(self.dims, &self.graph).map(|cell| match cell {
             NumberlinkCell::TERMINUS { affiliation } => {
                 self.affiliation_displays.get(*affiliation).unwrap().to_ascii_uppercase()
             }

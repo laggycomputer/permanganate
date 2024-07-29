@@ -131,9 +131,9 @@ pub trait BoardShape: Step {
     fn ensure_forward(&self) -> Self;
 }
 
-impl<T> BoardShape for T
+impl<Sh> BoardShape for Sh
 where
-    T: Step,
+    Sh: Step,
 {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
         Self::VARIANTS.iter()
