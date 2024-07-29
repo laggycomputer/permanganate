@@ -1,6 +1,5 @@
 use std::cmp::min;
 use std::collections::HashSet;
-use std::convert::identity;
 use std::fmt::{Display, Formatter};
 use std::num::NonZero;
 use std::ops::{IndexMut, Range};
@@ -8,6 +7,8 @@ use std::ops::{IndexMut, Range};
 use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
+use petgraph::prelude::GraphMap;
+use petgraph::visit::IntoNodeIdentifiers;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Solver, Var};
 
@@ -95,7 +96,13 @@ where
         })
     }
 
-    pub fn solve(mut self) {
+    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation, can_be_null: bool) -> AffiliationID {
+        (if can_be_null { self.valid_affiliations() } else { self.valid_non_null_affiliations() })
+            .find(|aff| model.get(self.affiliation_var(subject, *aff).index()).unwrap().is_positive())
+            .unwrap()
+    }
+
+    pub fn solve(mut self) -> Array2<NumberlinkCell> {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
@@ -212,14 +219,33 @@ where
         let mut solver = Solver::new();
         formulae.into_iter().for_each(|formula| solver.add_formula(&formula));
         solver.assume(assumptions.into_iter().as_ref());
-        let solve_result = solver.solve();
-        println!("{:?}", solve_result);
-        if solve_result.is_ok_and(identity) {
-            let solved = solver.model().unwrap();
-            println!("{:?}", solved);
-        } else {
-            println!("{:?}", solver.failed_core());
+        solver.solve().unwrap();
+        let model = solver.model().unwrap();
+        println!("{:?}", model);
+
+        let mut solved_graph: UnGraphMap<Node, Edge<T>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
+        for existing_node in self.graph.node_identifiers() {
+            let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(existing_node), false);
+
+            let mut new_node = existing_node.clone();
+            if existing_node.cell == NumberlinkCell::EMPTY {
+                new_node.cell = NumberlinkCell::PATH { affiliation: solved_aff }
+            }
+            // existing terminus and path cells can stay as is
+
+            solved_graph.add_node(new_node);
         }
+
+        // for (n1, n2, e) in self.graph.all_edges() {
+        //     let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&(n1, n2, e)), false);
+        //
+        //     let mut new_e = *e;
+        //     new_e.affiliation = solved_aff;
+        //
+        //     solved_graph.add_edge(n1, n2, new_e);
+        // }
+
+        T::gph_to_array(self.dims, &solved_graph)
     }
 }
 

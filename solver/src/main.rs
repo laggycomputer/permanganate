@@ -13,5 +13,6 @@ fn main() {
 
     println!("{}", board);
 
-    board.solve();
+    let solved = board.solve();
+    println!("{:?}", solved);
 }
