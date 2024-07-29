@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::cmp::min;
 use std::collections::HashSet;
 use std::convert::identity;
 use std::fmt::{Display, Formatter};
@@ -78,21 +78,18 @@ where
                 (location.1 * self.dims.0.get() + location.0) * self.valid_affiliations().len() + affiliation
             }
             HasAffiliation::EDGE { nodes } => {
-                // compare y-values
-                let lowest_index_location = match nodes.0.1.cmp(&nodes.1.1) {
-                    Ordering::Less => nodes.0,
-                    // tie; compare x-values
-                    Ordering::Equal => if nodes.0.0 < nodes.1.0 { nodes.0 } else { nodes.1 }
-                    Ordering::Greater => nodes.1,
-                };
+                // #[derive(Ord)] on Node will give the node with lower index first here
+                let lower_index_location = min(nodes.0, nodes.1);
 
                 let actual_dir = T::direction_to(nodes.0, nodes.1).unwrap().ensure_forward();
 
                 // offset out of addressing space for nodes
                 self.dims.1.get() * self.dims.0.get() * self.valid_affiliations().len()
-                    + (
-                    (lowest_index_location.1 * self.dims.0.get() + lowest_index_location.0)
-                        * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0)
+                    // offset for location...
+                    + ((lower_index_location.1 * self.dims.0.get() + lower_index_location.0)
+                    // then edge "direction"...
+                    * T::forward_edge_directions().len() + T::forward_edge_directions().iter().find_position(|dir| **dir == actual_dir).unwrap().0)
+                    // then affiliation
                     * self.valid_affiliations().len() + affiliation
             }
         })
