@@ -234,16 +234,14 @@ where
             solved_graph.add_node(new_node);
         }
 
-        // for (n1, n2, e) in self.graph.all_edges() {
-        //     let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&(n1, n2, e)), false);
-        //
-        //     let mut new_e = *e;
-        //     new_e.affiliation = solved_aff;
-        //
-        //     solved_graph.add_edge(n1, n2, new_e);
-        // }
+        for (n1, n2, e) in self.graph.all_edges() {
+            let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&(n1, n2, e)), true);
 
-        T::gph_to_array(self.dims, &solved_graph)
+            let mut new_e = *e;
+            new_e.affiliation = solved_aff;
+
+            solved_graph.add_edge(n1, n2, new_e);
+        }
 
         self.graph = solved_graph;
         self
