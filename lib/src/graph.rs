@@ -193,7 +193,7 @@ where
             )));
 
             for aff in self.valid_non_null_affiliations() {
-                // an edge having a non-null affiliation <=> its vertices have the same affiliation
+                // E having a non-null affiliation <=> its vertices have the same affiliation
                 // let this be A <=> BC
                 // A => BC = !A + BC = (!A + B)(!A + C)
                 // BC => A = !(BC) + A = !B + !C + A
