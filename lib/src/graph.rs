@@ -235,8 +235,9 @@ where
             solved_graph.add_node(new_node);
         }
 
-        for (n1, n2, e) in self.graph.all_edges() {
-            let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&(n1, n2, e)), true);
+        for triple in self.graph.all_edges() {
+            let (n1, n2, e) = triple;
+            let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&triple), true);
 
             let mut new_e = *e;
             new_e.affiliation = solved_aff;
