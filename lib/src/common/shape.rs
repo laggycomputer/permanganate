@@ -37,7 +37,7 @@ impl Step for SquareStep {
     }
 
     fn forward_edge_directions() -> &'static [Self] {
-        &[Self::DOWN, Self::RIGHT]
+        &[Self::RIGHT, Self::DOWN]
     }
 
     fn invert(&self) -> Self {
