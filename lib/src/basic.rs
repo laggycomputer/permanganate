@@ -9,7 +9,8 @@ use strum::VariantArray;
 use varisat::{CnfFormula, Solver, Var};
 
 use crate::common::affiliation::AffiliationID;
-use crate::common::location::{Dimension, Location, NumberlinkCell};
+use crate::common::cell::NumberlinkCell;
+use crate::common::location::{Dimension, Location};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{SquareStep, Step};
 

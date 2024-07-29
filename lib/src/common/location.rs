@@ -2,8 +2,6 @@ use std::num::NonZero;
 
 use ndarray::Ix;
 
-use crate::common::affiliation::AffiliationID;
-
 pub type Coord = usize;
 pub type Dimension = NonZero<Coord>;
 
@@ -24,12 +22,4 @@ impl From<(Ix, Ix)> for Location {
     fn from(value: (Ix, Ix)) -> Self {
         Self(value.1, value.0)
     }
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum NumberlinkCell {
-    TERMINUS { affiliation: AffiliationID },
-    PATH { affiliation: AffiliationID },
-    #[default]
-    EMPTY,
 }

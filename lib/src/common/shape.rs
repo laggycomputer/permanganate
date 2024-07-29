@@ -4,8 +4,8 @@ use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
-
-use crate::common::location::{Dimension, Location, NumberlinkCell};
+use crate::common::cell::NumberlinkCell;
+use crate::common::location::{Dimension, Location};
 use crate::graph::{Edge, Node};
 
 pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash {
