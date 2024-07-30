@@ -1,13 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::num::NonZero;
 use std::ops::Index;
 
 use itertools::Itertools;
-use ndarray::Array2;
+use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
 
-use crate::common::cell::SolvedNumberlinkCell;
+use crate::common::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
 use crate::common::location::{Dimension, Location};
 use crate::graph::{Edge, Node};
 
@@ -16,7 +17,7 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
     // directions which result in an index increase in a 2d array representation
     fn forward_edge_directions() -> &'static [Self];
     fn invert(&self) -> Self;
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<SolvedNumberlinkCell<Self>>;
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>>;
     fn print(board: Array2<char>) -> String;
 }
 
@@ -52,19 +53,63 @@ impl Step for SquareStep {
         }
     }
 
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<SolvedNumberlinkCell<Self>> {
-        let mut ret: Array2<Option<SolvedNumberlinkCell<Self>>> = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), || None);
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>> {
+        let mut ret: Array2<FrozenNumberLinkCell<Self>> = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), FrozenNumberLinkCell::default);
 
         for (index, ptr) in ret.indexed_iter_mut() {
             let relevant_nodes = board.nodes()
                 .filter(|n| n.location == Location::from(index))
                 .collect_vec();
-            assert!(relevant_nodes.len() > 1);
+            assert!(relevant_nodes.len() > 0);
 
             if relevant_nodes.len() == 1 {
-                let mut exits: HashMap<Self, bool> = HashMap::new();
+                let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
 
-                for edge in board.edges(*relevant_nodes.index(0)) {}
+                let this_node = relevant_nodes.index(0);
+                for edge_triple in board.edges(*this_node) {
+                    let (n1, n2, e) = edge_triple;
+                    let neighbor = if n1 == *this_node { n2 } else { n1 };
+                    // not a warp if a "typical" step can reach the neighbor, direction_to would return Some
+                    exits.insert(Self::direction_to(this_node.location, neighbor.location).unwrap_or({
+                        // warp; the direction in the edge struct is correct only if this node is indexed lower than its neighbor, otherwise it is reversed
+                        let mut direction = e.direction;
+                        if *this_node < neighbor {
+                            direction.invert();
+                        }
+
+                        direction
+                    }));
+                }
+
+                ptr.assign_elem(FrozenNumberLinkCell {
+                    exits,
+                    cell_type: match this_node.cell {
+                        NumberlinkCell::TERMINUS { affiliation } => FrozenCellType::TERMINUS { affiliation: NonZero::new(affiliation).unwrap() },
+                        NumberlinkCell::PATH { affiliation } => FrozenCellType::PATH { affiliation: NonZero::new(affiliation).unwrap() },
+                        NumberlinkCell::EMPTY => FrozenCellType::EMPTY,
+                        _ => unreachable!()
+                    },
+                });
+            } else {
+                // this is a bridge
+                let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
+                let mut affiliations = HashMap::with_capacity(Self::forward_edge_directions().len());
+
+                for node in relevant_nodes {
+                    match node.cell {
+                        NumberlinkCell::BRIDGE { affiliation, direction } => {
+                            exits.insert(direction);
+                            exits.insert(direction.invert());
+                            affiliations.insert(direction.ensure_forward(), NonZero::new(affiliation.unwrap()).unwrap());
+                        }
+                        _ => unreachable!()
+                    }
+                }
+
+                ptr.assign_elem(FrozenNumberLinkCell {
+                    exits,
+                    cell_type: FrozenCellType::BRIDGE { affiliations },
+                })
             }
         }
 
@@ -128,7 +173,7 @@ impl Step for HexStep {
         }
     }
 
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<SolvedNumberlinkCell<Self>> {
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>> {
         todo!()
     }
 

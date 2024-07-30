@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
+
 use crate::common::affiliation::AffiliationID;
 use crate::common::shape::BoardShape;
 
@@ -12,13 +13,26 @@ pub enum NumberlinkCell<Sh: BoardShape> {
     EMPTY,
 }
 
-enum SolvedCellType<Sh: BoardShape> {
+#[derive(Clone, Default)]
+pub(crate) enum FrozenCellType<Sh: BoardShape> {
     TERMINUS { affiliation: NonZero<AffiliationID> },
     PATH { affiliation: NonZero<AffiliationID> },
     BRIDGE { affiliations: HashMap<Sh, NonZero<AffiliationID>> },
+    #[default]
+    EMPTY,
 }
 
-pub struct SolvedNumberlinkCell<Sh: BoardShape> {
-    exits: HashMap<Sh, bool>,
-    cell_type: SolvedCellType<Sh>,
+#[derive(Clone)]
+pub struct FrozenNumberLinkCell<Sh: BoardShape> {
+    pub(crate) exits: HashSet<Sh>,
+    pub(crate) cell_type: FrozenCellType<Sh>,
+}
+
+impl<Sh: BoardShape> Default for FrozenNumberLinkCell<Sh> {
+    fn default() -> Self {
+        Self {
+            exits: Default::default(),
+            cell_type: FrozenCellType::EMPTY,
+        }
+    }
 }

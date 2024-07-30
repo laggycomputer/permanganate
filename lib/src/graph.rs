@@ -13,7 +13,7 @@ use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Solver, Var};
 
 use crate::common::affiliation::AffiliationID;
-use crate::common::cell::NumberlinkCell;
+use crate::common::cell::{FrozenCellType, NumberlinkCell};
 use crate::common::location::{Dimension, Location};
 use crate::common::logic::exactly_one;
 use crate::common::shape::{BoardShape, SquareStep, Step};
@@ -31,7 +31,7 @@ where
 {
     affiliation: AffiliationID,
     // direction from lower indexed edge
-    direction: Sh,
+    pub(crate) direction: Sh,
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash)]
@@ -236,13 +236,16 @@ where
         }
 
         for triple in self.graph.all_edges() {
-            let (n1, n2, e) = triple;
+            let (mut n1, mut n2, e) = triple;
             let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&triple), true);
 
             let mut new_e = *e;
             new_e.affiliation = solved_aff;
 
-            solved_graph.add_edge(n1, n2, new_e);
+            solved_graph.add_edge(
+                solved_graph.nodes().find(|n| n.location == n1.location).unwrap(),
+                solved_graph.nodes().find(|n| n.location == n2.location).unwrap(),
+                new_e);
         }
 
         self.graph = solved_graph;
@@ -252,14 +255,11 @@ where
 
 impl<Sh: BoardShape> Display for GeneralNumberlinkBoard<Sh> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", Sh::print(Sh::gph_to_array(self.dims, &self.graph).map(|cell| match cell {
-            NumberlinkCell::TERMINUS { affiliation } => {
-                self.affiliation_displays.get(*affiliation).unwrap().to_ascii_uppercase()
-            }
-            NumberlinkCell::PATH { affiliation } => {
-                self.affiliation_displays.get(*affiliation).unwrap().to_ascii_lowercase()
-            }
-            NumberlinkCell::EMPTY => '.',
+        write!(f, "{}", Sh::print(Sh::gph_to_array(self.dims, &self.graph).map(|cell| match cell.cell_type {
+            FrozenCellType::TERMINUS { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_uppercase(),
+            FrozenCellType::PATH { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_lowercase(),
+            FrozenCellType::BRIDGE { .. } => '+',
+            FrozenCellType::EMPTY => '.',
         })))
     }
 }
