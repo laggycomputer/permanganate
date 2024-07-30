@@ -52,7 +52,7 @@ impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
     }
 }
 
-pub(crate) struct GeneralNumberlinkBoard<Sh>
+pub struct GeneralNumberlinkBoard<Sh>
 where
     Sh: BoardShape,
 {
