@@ -3,7 +3,7 @@ mod tests {
     use std::num::NonZero;
 
     use crate::location::Location;
-    use crate::graph::SquareNumberlinkBoardBuilder;
+    use crate::builder::SquareNumberlinkBoardBuilder;
 
     #[test]
     fn solve_most_basic() {
