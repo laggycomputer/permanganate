@@ -101,6 +101,27 @@ where
             .unwrap()
     }
 
+    /// Solves this board, mutating and consuming `self` and returning a solved version of `self`.
+    ///
+    /// # Logical setup
+    /// Suppose this board is undirected graph G.
+    ///
+    /// ## Vertices
+    /// Every vertex V on G must have exactly one nonzero affiliation.
+    /// If V is a terminus, its affiliation is known and all other affiliations are incorrect.
+    /// Exactly one incident edge has the same affiliation (the edge by which the path exits this terminus).
+    /// Every other incident edge has no affiliation (i.e. affiliation 0).
+    ///
+    /// If V is not a terminus, it must have exactly one (not yet known) affiliation A.
+    /// Then V is on the path between the two termini with affiliation A and has two incident edges with affiliation A.
+    /// Every other incident edge has no affiliation.
+    ///
+    /// ## Edges
+    /// Every edge E on G has exactly one affiliation, which may be 0.
+    ///
+    /// The two endpoints of E have the same affiliation if and only if E has the same nonzero affiliation.
+    /// So, by complement, the two endpoints of E have different affiliation if and only if E has no affiliation.
+    /// We encode the former of these two biconditionals.
     pub fn solve(mut self) -> Option<Self> {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
