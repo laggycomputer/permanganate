@@ -92,4 +92,32 @@ cagggGbbbbbe
 CaaaABbEeeee
 ")
     }
+
+    fn simple_with_bridge() {
+        // flow free bridges starter pack 5x5 level 2
+        let board = SquareBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
+            .add_termini('A', (Location(1, 3), Location(3, 0)))
+            .add_termini('B', (Location(1, 4), Location(4, 3)))
+            .add_termini('C', (Location(0, 0), Location(0, 4)))
+            .add_termini('D', (Location(1, 0), Location(2, 2)))
+            .add_termini('E', (Location(4, 0), Location(2, 3)))
+            .add_bridge(Location(2, 1))
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), "CD.AE
+..+..
+..D..
+.AE.B
+CB...
+");
+
+        let solved = board.solve().unwrap();
+        assert_eq!(format!("{}", solved), "CDdAE
+ca+ae
+caDee
+cAEeB
+CBbbb
+");
+    }
 }
