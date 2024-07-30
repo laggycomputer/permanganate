@@ -2,12 +2,12 @@
 mod tests {
     use std::num::NonZero;
 
-    use crate::builder::{Builder, SquareNumberlinkBoardBuilder};
+    use crate::builder::{Builder, SquareBoardBuilder};
     use crate::location::Location;
 
     #[test]
     fn remove_termini() {
-        let board = SquareNumberlinkBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
+        let board = SquareBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
             .add_termini('A', (Location(0, 0), Location(1, 4)))
             .remove_termini('A')
             .build()
@@ -24,7 +24,7 @@ mod tests {
     #[test]
     fn solve_most_basic() {
         // flow free classic pack level 1
-        let board = SquareNumberlinkBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
+        let board = SquareBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
             .add_termini('A', (Location(0, 0), Location(1, 4)))
             .add_termini('B', (Location(2, 0), Location(1, 3)))
             .add_termini('C', (Location(2, 1), Location(2, 4)))
@@ -52,7 +52,7 @@ aACEe
     #[test]
     fn solve_large_simple_square() {
         // flow free extreme pack 2 12x12 level 13
-        let board = SquareNumberlinkBoardBuilder::with_dims((NonZero::new(12).unwrap(), NonZero::new(12).unwrap()))
+        let board = SquareBoardBuilder::with_dims((NonZero::new(12).unwrap(), NonZero::new(12).unwrap()))
             .add_termini('A', (Location(7, 4), Location(4, 11)))
             .add_termini('B', (Location(6, 4), Location(5, 11)))
             .add_termini('C', (Location(6, 6), Location(0, 11)))

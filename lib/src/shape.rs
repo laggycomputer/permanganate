@@ -9,7 +9,7 @@ use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
 
 use crate::board::{Edge, Node};
-use crate::cell::{FrozenCellType, FrozenNumberLinkCell, NumberlinkCell};
+use crate::cell::{FrozenCellType, FrozenCell, Cell};
 use crate::location::{Dimension, Location};
 
 /// Functionality that must be implemented on a case-by-case basis for any board shape.
@@ -28,7 +28,7 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
     /// Convert the graph in `board` to an array representation.
     ///
     /// New shapes should implement this and determine a scheme by which the graph can be embedded in an [`ndarray::Array2`].
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>>;
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenCell<Self>>;
     /// Dump the specified [`ndarray::Array2`], laying out individual characters based on the geometry of the shape [`Self`].
     fn print(board: Array2<char>) -> String;
 }
@@ -65,8 +65,8 @@ impl Step for SquareStep {
         }
     }
 
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>> {
-        let mut ret: Array2<FrozenNumberLinkCell<Self>> = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), FrozenNumberLinkCell::default);
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenCell<Self>> {
+        let mut ret: Array2<FrozenCell<Self>> = Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), FrozenCell::default);
 
         for (index, ptr) in ret.indexed_iter_mut() {
             let relevant_nodes = board.nodes()
@@ -93,12 +93,12 @@ impl Step for SquareStep {
                     }));
                 }
 
-                ptr.assign_elem(FrozenNumberLinkCell {
+                ptr.assign_elem(FrozenCell {
                     exits,
                     cell_type: match this_node.cell {
-                        NumberlinkCell::TERMINUS { affiliation } => FrozenCellType::TERMINUS { affiliation: NonZero::new(affiliation).unwrap() },
-                        NumberlinkCell::PATH { affiliation } => FrozenCellType::PATH { affiliation: NonZero::new(affiliation).unwrap() },
-                        NumberlinkCell::EMPTY => FrozenCellType::EMPTY,
+                        Cell::TERMINUS { affiliation } => FrozenCellType::TERMINUS { affiliation: NonZero::new(affiliation).unwrap() },
+                        Cell::PATH { affiliation } => FrozenCellType::PATH { affiliation: NonZero::new(affiliation).unwrap() },
+                        Cell::EMPTY => FrozenCellType::EMPTY,
                         _ => unreachable!()
                     },
                 });
@@ -109,7 +109,7 @@ impl Step for SquareStep {
 
                 for node in relevant_nodes {
                     match node.cell {
-                        NumberlinkCell::BRIDGE { affiliation, direction } => {
+                        Cell::BRIDGE { affiliation, direction } => {
                             exits.insert(direction);
                             exits.insert(direction.invert());
                             affiliations.insert(direction.ensure_forward(), NonZero::new(affiliation.unwrap()).unwrap());
@@ -118,7 +118,7 @@ impl Step for SquareStep {
                     }
                 }
 
-                ptr.assign_elem(FrozenNumberLinkCell {
+                ptr.assign_elem(FrozenCell {
                     exits,
                     cell_type: FrozenCellType::BRIDGE { affiliations },
                 })
@@ -185,7 +185,7 @@ impl Step for HexStep {
         }
     }
 
-    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>> {
+    fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenCell<Self>> {
         todo!()
     }
 

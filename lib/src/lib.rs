@@ -3,8 +3,8 @@
 //! # `permanganate`
 //!
 //! A solver for [Numberlink](https://en.wikipedia.org/wiki/Numberlink) and variants as posited in the mobile game Flow Free and its expansions.
-//! Begin by building a board object using a builder such as [`SquareNumberlinkBoardBuilder`](builder::SquareNumberlinkBoardBuilder) or others in the [`builder`] module.
-//! Convert it to a board object, then call [`solve()`](GeneralNumberlinkBoard.solve()), consuming the board and yielding a solved version of the board.
+//! Begin by building a board object using a builder such as [`SquareBoardBuilder`](builder::SquareBoardBuilder) or others in the [`builder`] module.
+//! Convert it to a board object, then call [`solve()`](crate::Board::solve), consuming the board and yielding a solved version of the board.
 //!
 //! `permanganate` can operate on generic board shapes, as encoded by the `Sh` type parameter.
 //! These shapes must implement [`Step`](crate::shape::Step) and will automatically have [`BoardShape`](crate::shape::BoardShape) `impl`'d as well.

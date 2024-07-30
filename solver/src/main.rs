@@ -1,11 +1,11 @@
 use std::num::NonZero;
 
-use permanganate::builder::{Builder, SquareNumberlinkBoardBuilder};
+use permanganate::builder::{Builder, SquareBoardBuilder};
 use permanganate::Location;
 
 fn main() {
     // flow free extreme pack 2 12x12 level 13
-    let board = SquareNumberlinkBoardBuilder::with_dims((NonZero::new(12).unwrap(), NonZero::new(12).unwrap()))
+    let board = SquareBoardBuilder::with_dims((NonZero::new(12).unwrap(), NonZero::new(12).unwrap()))
         .add_termini('A', (Location(7, 4), Location(4, 11)))
         .add_termini('B', (Location(6, 4), Location(5, 11)))
         .add_termini('C', (Location(6, 6), Location(0, 11)))

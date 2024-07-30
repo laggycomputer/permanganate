@@ -7,7 +7,7 @@ use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
 
-use crate::cell::NumberlinkCell;
+use crate::cell::Cell;
 use crate::board::{Edge, Board, Node};
 use crate::location::{Dimension, Location};
 use crate::shape::{BoardShape, SquareStep, Step};
@@ -42,10 +42,10 @@ pub trait Builder<Sh: BoardShape> {
 }
 
 /// A builder for boards with square-shaped cells, i.e. the rectangular boards found in Numberlink puzzles and in Flow Free and the Bridges and Warps expansions.
-pub struct SquareNumberlinkBoardBuilder {
+pub struct SquareBoardBuilder {
     // width, height
     dims: (Dimension, Dimension),
-    cells: Array2<NumberlinkCell<SquareStep>>,
+    cells: Array2<Cell<SquareStep>>,
     invalid_reasons: Vec<BuilderInvalidReason>,
     // TODO
     edge_blacklist: HashSet<UnorderedPair<Location>>,
@@ -55,17 +55,17 @@ pub struct SquareNumberlinkBoardBuilder {
     affiliation_displays: Vec<char>,
 }
 
-impl Default for SquareNumberlinkBoardBuilder {
+impl Default for SquareBoardBuilder {
     fn default() -> Self {
         Self::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
     }
 }
 
-impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
+impl Builder<SquareStep> for SquareBoardBuilder {
     fn with_dims(dims: (Dimension, Dimension)) -> Self {
         Self {
             dims,
-            cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
+            cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), Cell::default),
 
             invalid_reasons: Default::default(),
             edge_blacklist: Default::default(),
@@ -92,7 +92,7 @@ impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
         let aff = self.affiliation_displays.len() + 1;
         self.affiliation_displays.push(display);
         for location in [locations.0, locations.1] {
-            self.cells.index_mut(location.as_index()).assign_elem(NumberlinkCell::TERMINUS { affiliation: aff })
+            self.cells.index_mut(location.as_index()).assign_elem(Cell::TERMINUS { affiliation: aff })
         }
 
         self
@@ -107,8 +107,8 @@ impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
             None => {}
             Some((index, _)) => self.cells.map_inplace(|cell| {
                 match cell {
-                    NumberlinkCell::TERMINUS { affiliation } => if *affiliation == (index + 1) {
-                        cell.assign_elem(NumberlinkCell::EMPTY);
+                    Cell::TERMINUS { affiliation } => if *affiliation == (index + 1) {
+                        cell.assign_elem(Cell::EMPTY);
                     },
                     _ => {}
                 }

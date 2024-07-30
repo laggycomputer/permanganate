@@ -12,7 +12,7 @@ use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Solver, Var};
 
 use crate::affiliation::AffiliationID;
-use crate::cell::{FrozenCellType, NumberlinkCell};
+use crate::cell::{FrozenCellType, Cell};
 use crate::location::{Dimension, Location};
 use crate::logic::exactly_one;
 use crate::shape::BoardShape;
@@ -20,7 +20,7 @@ use crate::shape::BoardShape;
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub(crate) struct Node<Sh: BoardShape> {
     pub(crate) location: Location,
-    pub(crate) cell: NumberlinkCell<Sh>,
+    pub(crate) cell: Cell<Sh>,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -56,7 +56,7 @@ impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
 /// A board object using cells organized as specified by `Sh`.
 /// See the [`BoardShape`] and [`Step`] traits for more information.
 ///
-/// [`Board`]s should be built using a [`Builder`](crate::builder::Builder) such as [`SquareNumberlinkBoardBuilder`](crate::builder::SquareNumberlinkBoardBuilder).
+/// [`Board`]s should be built using a [`Builder`](crate::builder::Builder) such as [`SquareBoardBuilder`](crate::builder::SquareBoardBuilder).
 pub struct Board<Sh>
 where
     Sh: BoardShape,
@@ -133,7 +133,7 @@ where
         for vertex in self.graph.nodes() {
             // let this vertex be V
             match vertex.cell {
-                NumberlinkCell::TERMINUS { affiliation: aff } => {
+                Cell::TERMINUS { affiliation: aff } => {
                     // the affiliation of V is the one already assigned, and no other; we tell the solver to assume this is so
                     assumptions.extend(self.valid_affiliations()
                         .map(|maybe_aff| self.affiliation_var(HasAffiliation::from(vertex), maybe_aff).lit(maybe_aff == aff)));
@@ -153,7 +153,7 @@ where
                             .collect_vec()
                     )));
                 }
-                NumberlinkCell::EMPTY => {
+                Cell::EMPTY => {
                     // V must have nonzero affiliation
                     assumptions.push(self.affiliation_var(HasAffiliation::from(vertex), 0).negative());
 
@@ -253,8 +253,8 @@ where
             let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(existing_node), false);
 
             let mut new_node = existing_node.clone();
-            if existing_node.cell == NumberlinkCell::EMPTY {
-                new_node.cell = NumberlinkCell::PATH { affiliation: solved_aff }
+            if existing_node.cell == Cell::EMPTY {
+                new_node.cell = Cell::PATH { affiliation: solved_aff }
             }
             // existing terminus and path cells can stay as is
 
