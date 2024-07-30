@@ -7,7 +7,7 @@ pub(crate) type Dimension = NonZero<Coord>;
 
 #[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
 /// A location `(x, y)` on a board. The top left corner is `Location(0, 0)`.
-pub struct Location(pub(crate) Coord, pub(crate) Coord);
+pub struct Location(pub Coord, pub Coord);
 
 impl Location {
     pub(crate) fn as_index(&self) -> (Coord, Coord) {
