@@ -12,17 +12,31 @@ use crate::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
 use crate::location::{Dimension, Location};
 use crate::board::{Edge, Node};
 
+/// Functionality that must be implemented on a case-by-case basis for any board shape.
+///
+/// [`SquareStep`] and [`HexStep`] are built-in implementations.
 pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
+    /// Attempt the step from `location` in the direction specified by `self` and return the resultant [`Location`](crate::Location).
     fn attempt_from(&self, location: Location) -> Location;
-    // directions which result in an index increase in a 2d array representation
+    /// Return the static array of all "forward" directions.
+    ///
+    /// Forward directions should be those which, upon stepping from one location to another, cause the destination location to be indexed higher than the origin location.
+    /// For example, for [`SquareStep`] and given the row-major ordering of the cell array, [`DOWN`](SquareStep::DOWN) and [`RIGHT`](SquareStep::RIGHT) are forward directions.
     fn forward_edge_directions() -> &'static [Self];
+    /// Invert the direction specified by `self`:
+    /// ```
+    /// use permanganate::shape::SquareStep;
+    /// use permanganate::Step;
+    ///
+    /// assert_eq!(SquareStep::DOWN.invert(), SquareStep::UP);
+    /// ```
     fn invert(&self) -> Self;
     fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>>;
     fn print(board: Array2<char>) -> String;
 }
 
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
-pub(crate) enum SquareStep {
+pub enum SquareStep {
     UP,
     DOWN,
     LEFT,
@@ -182,9 +196,18 @@ impl Step for HexStep {
     }
 }
 
+/// Functionality on top of [`Step`] required by [`Board`](crate::Board)s with identical implementation across all `Sh`.
 pub trait BoardShape: Step {
+    /// Get all neighbors of a [`Location`] in "theory", by attempting every step direction in `Self::VARIANTS`.
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>;
+    /// Determine the direction from `a` to `b` by calling [`attempt_from`](Step::attempt_from) until one works.
+    ///
+    /// This is not exhaustive since it does not consider any graph-based information.
+    /// It works only on two [`Location`]s which are adjacent in the array representation of their [`Board`](crate::Board) and will return [`None`] otherwise.
     fn direction_to(a: Location, b: Location) -> Option<Self>;
+    /// Convert this [`Self`] to a "forward" direction, if it is not already such a direction.
+    ///
+    /// For the definition of forward directions, see [`Step::forward_edge_directions`].
     fn ensure_forward(&self) -> Self;
 }
 

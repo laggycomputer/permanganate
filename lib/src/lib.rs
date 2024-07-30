@@ -32,13 +32,13 @@
 pub use location::Location;
 pub use board::Board;
 pub use shape::{Step, BoardShape};
-use crate::builder::Builder;
+pub use crate::builder::Builder;
 
 pub(crate) mod board;
 mod tests;
 pub(crate) mod affiliation;
 pub(crate) mod location;
 pub(crate) mod logic;
-pub(crate) mod shape;
+pub mod shape;
 pub(crate) mod cell;
 pub mod builder;
