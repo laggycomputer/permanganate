@@ -20,7 +20,9 @@ pub enum BuilderInvalidReason {
 }
 
 /// Functionality all builders must implement, parametrised over the grid shape `Sh` of the resulting board.
-pub trait Builder<Sh: BoardShape> {
+///
+/// Builders mutate themselves while building but can be [`Clone`]d to save their state at some point.
+pub trait Builder<Sh: BoardShape>: Clone {
     /// Construct a new [`Self`] with the specified dimensions, specified in `(x, y)` order.
     fn with_dims(dims: (Dimension, Dimension)) -> Self;
     /// Add termini or "flow endpoints". The order in which `locations` are specified does not matter.
@@ -42,6 +44,7 @@ pub trait Builder<Sh: BoardShape> {
 }
 
 /// A builder for boards with square-shaped cells, i.e. the rectangular boards found in Numberlink puzzles and in Flow Free and the Bridges and Warps expansions.
+#[derive(Clone)]
 pub struct SquareBoardBuilder {
     // width, height
     dims: (Dimension, Dimension),
