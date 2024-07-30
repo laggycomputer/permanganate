@@ -74,7 +74,7 @@ impl Step for SquareStep {
                         // warp; the direction in the edge struct is correct only if this node is indexed lower than its neighbor, otherwise it is reversed
                         let mut direction = e.direction;
                         if *this_node < neighbor {
-                            direction.invert();
+                            direction = direction.invert();
                         }
 
                         direction
