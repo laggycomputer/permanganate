@@ -40,7 +40,7 @@ mod tests {
 .ACE.
 ");
 
-        let solved = board.solve();
+        let solved = board.solve().unwrap();
         assert_eq!(format!("{}", solved), "AbBdD
 abCdE
 abcde
@@ -77,7 +77,7 @@ aACEe
 C...AB.E....
 ");
 
-        let solved = board.solve();
+        let solved = board.solve().unwrap();
         assert_eq!(format!("{}", solved), "ccccceeeeeee
 caaacebbbbbe
 caDacebFffbe
