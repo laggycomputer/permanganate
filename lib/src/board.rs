@@ -106,6 +106,8 @@ where
     }
 
     /// Solves this board, mutating and consuming `self` and returning a solved version of `self`.
+    /// If this board is unsolvable, return [`None`].
+    /// Otherwise, return `Some(self)`.
     ///
     /// # Logical setup
     /// Suppose this board is undirected graph G.
