@@ -7,8 +7,8 @@ use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
 
+use crate::board::{Board, Edge, Node};
 use crate::cell::Cell;
-use crate::board::{Edge, Board, Node};
 use crate::location::{Dimension, Location};
 use crate::shape::{BoardShape, SquareStep, Step};
 
@@ -28,10 +28,10 @@ pub trait Builder<Sh: BoardShape> {
     /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if either location is out of bounds.
     /// If the builder is already in an invalid state, this function does nothing.
     fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self;
-    /// Remove termini by their assigned display character.
+    /// Remove the most recently added termini.
     ///
-    /// If the builder is in an invalid state, this function does nothing.
-    fn remove_termini(&mut self, display: char) -> &mut Self;
+    /// If the builder is in an invalid state or no termini are present, this function does nothing.
+    fn pop_termini(&mut self) -> &mut Self;
     /// Check the validity of this builder, ensuring no [`BuilderInvalidReason`] condition has arisen.
     ///
     /// Returns `None` if the builder is valid, `Some(&Vec<BuilderInvalidReason>)` otherwise.
@@ -98,16 +98,17 @@ impl Builder<SquareStep> for SquareBoardBuilder {
         self
     }
 
-    fn remove_termini(&mut self, display: char) -> &mut Self {
+    fn pop_termini(&mut self) -> &mut Self {
         if !self.invalid_reasons.is_empty() {
             return self;
         }
 
-        match self.affiliation_displays.iter().find_position(|disp| **disp == display) {
-            None => {}
-            Some((index, _)) => self.cells.map_inplace(|cell| {
+        let aff_to_remove = self.affiliation_displays.len();
+        let display = self.affiliation_displays.pop();
+        if display.is_some() {
+            self.cells.map_inplace(|cell| {
                 match cell {
-                    Cell::TERMINUS { affiliation } => if *affiliation == (index + 1) {
+                    Cell::TERMINUS { affiliation } => if *affiliation == aff_to_remove {
                         cell.assign_elem(Cell::EMPTY);
                     },
                     _ => {}

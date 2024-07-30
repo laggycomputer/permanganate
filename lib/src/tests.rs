@@ -9,7 +9,7 @@ mod tests {
     fn remove_termini() {
         let board = SquareBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
             .add_termini('A', (Location(0, 0), Location(1, 4)))
-            .remove_termini('A')
+            .pop_termini()
             .build()
             .unwrap();
 
