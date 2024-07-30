@@ -12,7 +12,7 @@ use crate::board::{Edge, Board, Node};
 use crate::location::{Dimension, Location};
 use crate::shape::{BoardShape, SquareStep, Step};
 
-/// Reasons a builder may become invalid while being built.
+/// Reasons a builder may become invalid while building.
 #[derive(Copy, Clone, Debug)]
 pub enum BuilderInvalidReason {
     /// A feature like a bridge was inserted outside the bounds specified by `dims` on a builder.

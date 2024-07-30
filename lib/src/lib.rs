@@ -32,6 +32,7 @@
 pub use location::Location;
 pub use board::Board;
 pub use shape::{Step, BoardShape};
+use crate::builder::Builder;
 
 pub(crate) mod board;
 mod tests;
