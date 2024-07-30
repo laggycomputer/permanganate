@@ -1,6 +1,6 @@
 use std::num::NonZero;
 
-use permanganate::builder::SquareNumberlinkBoardBuilder;
+use permanganate::builder::{Builder, SquareNumberlinkBoardBuilder};
 use permanganate::Location;
 
 fn main() {
