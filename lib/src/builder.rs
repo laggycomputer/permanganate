@@ -21,11 +21,24 @@ pub enum BuilderInvalidReason {
 
 /// Functionality all builders must implement, parametrised over the grid shape `Sh` of the resulting board.
 pub trait Builder<Sh: BoardShape> {
+    /// Construct a new [`Self`] with the specified dimensions, specified in `(x, y)` order.
     fn with_dims(dims: (Dimension, Dimension)) -> Self;
+    /// Add termini or "flow endpoints". The order in which `locations` are specified does not matter.
+    ///
+    /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if either location is out of bounds.
+    /// If the builder is already in an invalid state, this function does nothing.
     fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self;
+    /// Remove termini by their assigned display character.
+    ///
+    /// If the builder is in an invalid state, this function does nothing.
     fn remove_termini(&mut self, display: char) -> &mut Self;
+    /// Check the validity of this builder, ensuring no [`BuilderInvalidReason`] condition has arisen.
+    ///
+    /// Returns `None` if the builder is valid, `Some(&Vec<BuilderInvalidReason>)` otherwise.
+    fn is_valid(&self) -> Option<&Vec<BuilderInvalidReason>>;
     /// Convert the state of this builder into a [`Board`].
-    fn build(&self) -> Result<Board<Sh>, Vec<BuilderInvalidReason>>;
+    /// If the builder is invalid for any reason, a reference to a [`Vec`] of [`BuilderInvalidReason`] will indicate why.
+    fn build(&self) -> Result<Board<Sh>, &Vec<BuilderInvalidReason>>;
 }
 
 /// A builder for boards with square-shaped cells, i.e. the rectangular boards found in Numberlink puzzles and in Flow Free and the Bridges and Warps expansions.
@@ -105,9 +118,17 @@ impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
         self
     }
 
-    fn build(&self) -> Result<Board<SquareStep>, Vec<BuilderInvalidReason>> {
+    fn is_valid(&self) -> Option<&Vec<BuilderInvalidReason>> {
+        if self.invalid_reasons.is_empty() {
+            None
+        } else {
+            Some(&self.invalid_reasons)
+        }
+    }
+
+    fn build(&self) -> Result<Board<SquareStep>, &Vec<BuilderInvalidReason>> {
         if !self.invalid_reasons.is_empty() {
-            return Err(self.invalid_reasons.clone());
+            return Err(&self.invalid_reasons);
         }
 
         let mut graph = UnGraphMap::with_capacity(
