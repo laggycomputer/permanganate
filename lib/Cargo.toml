@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 itertools = "0.13.0"
 ndarray = "0.15.6"
-petgraph = "0.6.5"
+petgraph = { version = "0.6.5", features = ["graphmap"] }
 strum = { version = "0.26.3", features = ["derive"] }
 unordered-pair = "0.2.5"
 varisat = "0.2.2"
