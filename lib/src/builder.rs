@@ -1,9 +1,12 @@
-use std::num::NonZero;
-use ndarray::{Array2, AssignElem};
 use std::collections::HashSet;
-use unordered_pair::UnorderedPair;
-use petgraph::graphmap::UnGraphMap;
+use std::num::NonZero;
 use std::ops::IndexMut;
+
+use itertools::Itertools;
+use ndarray::{Array2, AssignElem};
+use petgraph::graphmap::UnGraphMap;
+use unordered_pair::UnorderedPair;
+
 use crate::cell::NumberlinkCell;
 use crate::graph::{Edge, GeneralNumberlinkBoard, Node};
 use crate::location::{Dimension, Location};
@@ -65,6 +68,26 @@ impl SquareNumberlinkBoardBuilder {
         self.affiliation_displays.push(display);
         for location in [locations.0, locations.1] {
             self.cells.index_mut(location.as_index()).assign_elem(NumberlinkCell::TERMINUS { affiliation: aff })
+        }
+
+        self
+    }
+
+    pub fn remove_termini(&mut self, display: char) -> &mut Self {
+        if !self.invalid_reasons.is_empty() {
+            return self;
+        }
+
+        match self.affiliation_displays.iter().find_position(|disp| **disp == display) {
+            None => {}
+            Some((index, _)) => self.cells.map_inplace(|cell| {
+                match cell {
+                    NumberlinkCell::TERMINUS { affiliation } => if *affiliation == (index + 1) {
+                        cell.assign_elem(NumberlinkCell::EMPTY);
+                    },
+                    _ => {}
+                }
+            })
         }
 
         self

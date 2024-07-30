@@ -2,8 +2,24 @@
 mod tests {
     use std::num::NonZero;
 
-    use crate::location::Location;
     use crate::builder::SquareNumberlinkBoardBuilder;
+    use crate::location::Location;
+
+    #[test]
+    fn remove_termini() {
+        let board = SquareNumberlinkBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
+            .add_termini('A', (Location(0, 0), Location(1, 4)))
+            .remove_termini('A')
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), ".....
+.....
+.....
+.....
+.....
+");
+    }
 
     #[test]
     fn solve_most_basic() {
@@ -32,7 +48,7 @@ aBcDe
 aACEe
 ")
     }
-    
+
     #[test]
     fn solve_large_simple_square() {
         // flow free extreme pack 2 12x12 level 13
