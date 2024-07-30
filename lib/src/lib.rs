@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 pub use builder::{BuilderInvalidReason, SquareNumberlinkBoardBuilder};
 pub use location::Location;
 

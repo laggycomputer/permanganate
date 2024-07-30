@@ -14,7 +14,7 @@ use crate::affiliation::AffiliationID;
 use crate::cell::{FrozenCellType, NumberlinkCell};
 use crate::location::{Dimension, Location};
 use crate::logic::exactly_one;
-use crate::shape::{BoardShape, Step};
+use crate::shape::BoardShape;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub(crate) struct Node<Sh: BoardShape> {
@@ -234,7 +234,7 @@ where
         }
 
         for triple in self.graph.all_edges() {
-            let (mut n1, mut n2, e) = triple;
+            let (n1, n2, e) = triple;
             let solved_aff = self.solved_affiliation_of(&model, HasAffiliation::from(&triple), true);
 
             let mut new_e = *e;
