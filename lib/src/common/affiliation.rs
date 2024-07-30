@@ -1,1 +1,1 @@
-pub type AffiliationID = usize;
+pub(crate) type AffiliationID = usize;

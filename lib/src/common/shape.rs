@@ -12,7 +12,7 @@ use crate::common::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
 use crate::common::location::{Dimension, Location};
 use crate::graph::{Edge, Node};
 
-pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
+pub(crate) trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
     fn attempt_from(&self, location: Location) -> Location;
     // directions which result in an index increase in a 2d array representation
     fn forward_edge_directions() -> &'static [Self];
@@ -22,7 +22,7 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
 }
 
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
-pub enum SquareStep {
+pub(crate) enum SquareStep {
     UP,
     DOWN,
     LEFT,
@@ -136,7 +136,7 @@ impl Step for SquareStep {
 // 0   1   2   3
 //   0   1   2   3
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
-pub enum HexStep {
+enum HexStep {
     UP,
     UPRIGHT,
     RIGHTDOWN,
@@ -182,7 +182,7 @@ impl Step for HexStep {
     }
 }
 
-pub trait BoardShape: Step {
+pub(crate) trait BoardShape: Step {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>;
     fn direction_to(a: Location, b: Location) -> Option<Self>;
     fn ensure_forward(&self) -> Self;

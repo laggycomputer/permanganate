@@ -5,7 +5,7 @@ use crate::common::affiliation::AffiliationID;
 use crate::common::shape::BoardShape;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum NumberlinkCell<Sh: BoardShape> {
+pub(crate) enum NumberlinkCell<Sh: BoardShape> {
     TERMINUS { affiliation: AffiliationID },
     PATH { affiliation: AffiliationID },
     BRIDGE { affiliation: Option<AffiliationID>, direction: Sh },
@@ -23,7 +23,7 @@ pub(crate) enum FrozenCellType<Sh: BoardShape> {
 }
 
 #[derive(Clone)]
-pub struct FrozenNumberLinkCell<Sh: BoardShape> {
+pub(crate) struct FrozenNumberLinkCell<Sh: BoardShape> {
     pub(crate) exits: HashSet<Sh>,
     pub(crate) cell_type: FrozenCellType<Sh>,
 }

@@ -56,7 +56,7 @@ impl SquarePathShape {
 }
 
 #[derive(Clone)]
-pub struct SimpleNumberlinkBoard {
+pub(crate) struct SimpleNumberlinkBoard {
     dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell<SquareStep>>,
     last_used_affiliation: Option<AffiliationID>,
@@ -70,7 +70,7 @@ impl Default for SimpleNumberlinkBoard {
 }
 
 impl SimpleNumberlinkBoard {
-    pub fn with_dims(dims: (Dimension, Dimension)) -> Result<Self, &'static str> {
+    pub(crate) fn with_dims(dims: (Dimension, Dimension)) -> Result<Self, &'static str> {
         Ok(Self {
             dims,
             // row major
@@ -87,21 +87,21 @@ impl SimpleNumberlinkBoard {
         }
     }
 
-    pub fn add_termini(&mut self, locations: (Location, Location)) {
+    pub(crate) fn add_termini(&mut self, locations: (Location, Location)) {
         self._add_termini(
             self.next_avail_aff(),
             ('A' as usize + self.next_avail_aff()) as u8 as char,
             locations)
     }
 
-    pub fn add_termini_with_display(&mut self, display: char, locations: (Location, Location)) {
+    pub(crate) fn add_termini_with_display(&mut self, display: char, locations: (Location, Location)) {
         self._add_termini(
             self.next_avail_aff(),
             display,
             locations)
     }
 
-    pub fn num_affiliations(&self) -> usize {
+    pub(crate) fn num_affiliations(&self) -> usize {
         // if ID n is used, then n+1 IDs exist
         match self.last_used_affiliation {
             None => 0,
@@ -137,7 +137,7 @@ impl SimpleNumberlinkBoard {
         self.last_used_affiliation = Some(aff);
     }
 
-    pub fn step(&self, loc: Location, direction: SquareStep) -> Option<Location> {
+    pub(crate) fn step(&self, loc: Location, direction: SquareStep) -> Option<Location> {
         let new_loc = direction.attempt_from(loc);
 
         match (0..self.dims.0.get()).contains(&new_loc.0) && (0..self.dims.1.get()).contains(&new_loc.1) {
@@ -146,7 +146,7 @@ impl SimpleNumberlinkBoard {
         }
     }
 
-    pub fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<SquareStep>) {
+    pub(crate) fn neighbors_of(&self, loc: Location) -> (HashSet<Location>, HashSet<SquareStep>) {
         let mut neighbor_locs: HashSet<Location> = HashSet::with_capacity(4);
         let mut possible_directions: HashSet<SquareStep> = HashSet::with_capacity(4);
         for dir in SquareStep::VARIANTS {
@@ -160,7 +160,7 @@ impl SimpleNumberlinkBoard {
     }
 
     // check that every affiliation with termini has exactly 2 termini
-    pub fn is_valid_problem(&self) -> bool {
+    fn is_valid_problem(&self) -> bool {
         let mut found_termini: HashMap<AffiliationID, u8> = HashMap::new();
         for cell in self.cells.iter() {
             if let NumberlinkCell::TERMINUS { affiliation } = cell {
@@ -175,7 +175,7 @@ impl SimpleNumberlinkBoard {
         return found_termini.into_values().all(|c| c == 2);
     }
 
-    pub fn solve_bsat(&self) -> Option<SimpleNumberlinkBoard> {
+    pub(crate) fn solve_bsat(&self) -> Option<SimpleNumberlinkBoard> {
         if !self.is_valid_problem() || self.num_affiliations() == 0 {
             return None;
         }

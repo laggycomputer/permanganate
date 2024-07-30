@@ -54,7 +54,7 @@ impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
     }
 }
 
-pub struct GeneralNumberlinkBoard<Sh>
+pub(crate) struct GeneralNumberlinkBoard<Sh>
 where
     Sh: BoardShape,
 {
@@ -102,7 +102,7 @@ where
             .unwrap()
     }
 
-    pub fn solve(mut self) -> Self {
+    pub(crate) fn solve(mut self) -> Self {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
@@ -265,13 +265,13 @@ impl<Sh: BoardShape> Display for GeneralNumberlinkBoard<Sh> {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum BuilderInvalidReason {
+pub(crate) enum BuilderInvalidReason {
     FeatureOutOfBounds,
 }
 
-pub struct SquareNumberlinkBoardBuilder {
+pub(crate) struct SquareNumberlinkBoardBuilder {
     // width, height
-    pub dims: (Dimension, Dimension),
+    dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell<SquareStep>>,
     invalid_reasons: Vec<BuilderInvalidReason>,
     // TODO
@@ -289,7 +289,7 @@ impl Default for SquareNumberlinkBoardBuilder {
 }
 
 impl SquareNumberlinkBoardBuilder {
-    pub fn with_dims(dims: (Dimension, Dimension)) -> Self {
+    pub(crate) fn with_dims(dims: (Dimension, Dimension)) -> Self {
         Self {
             dims,
             cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
@@ -303,7 +303,7 @@ impl SquareNumberlinkBoardBuilder {
         }
     }
 
-    pub fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut SquareNumberlinkBoardBuilder {
+    pub(crate) fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut SquareNumberlinkBoardBuilder {
         if !self.invalid_reasons.is_empty() {
             return self;
         }
@@ -325,7 +325,7 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
+    pub(crate) fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
         if !self.invalid_reasons.is_empty() {
             return Err(self.invalid_reasons.clone());
         }
