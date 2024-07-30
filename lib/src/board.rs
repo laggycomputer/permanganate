@@ -54,7 +54,7 @@ impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
 }
 
 /// A board object using cells organized as specified by `Sh`.
-/// See the [`BoardShape`] and [`Step`] traits for more information.
+/// See the [`BoardShape`] and [`Step`](crate::shape::Step) traits for more information.
 ///
 /// [`Board`]s should be built using a [`Builder`](crate::builder::Builder) such as [`SquareBoardBuilder`](crate::builder::SquareBoardBuilder).
 pub struct Board<Sh>

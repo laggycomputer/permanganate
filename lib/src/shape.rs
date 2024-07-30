@@ -201,7 +201,7 @@ pub trait BoardShape: Step {
     fn direction_to(a: Location, b: Location) -> Option<Self>;
     /// Convert this [`Self`] to a "forward" direction, if it is not already such a direction.
     ///
-    /// For the definition of forward directions, see [`Step::forward_edge_directions`].
+    /// For the definition of forward directions, see [`Step::FORWARD_VARIANTS`].
     fn ensure_forward(&self) -> Self;
 }
 
