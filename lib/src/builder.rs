@@ -5,6 +5,7 @@ use std::ops::IndexMut;
 use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
+use petgraph::visit::IntoEdges;
 use unordered_pair::UnorderedPair;
 
 use crate::board::{Board, Edge, Node};
@@ -165,7 +166,39 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             }
         }
 
-        // TODO: handle bridges, warps, any shape besides simple complete rectangle graph
+        // we replace nodes at a bridge location with multiple nodes, all sharing a location, but each has neighbors only in two opposing directions
+        for bridge_loc in &self.bridges {
+            // assume there isn't already a bridge here (bridges is hashset so that'll be true)
+            let existing_node_here = graph.nodes().find(|n| n.location == *bridge_loc).unwrap();
+
+            // deref and collect to avoid mutating ref inside iterator borrowing ref
+            let old_edges = graph.edges(existing_node_here)
+                .map(|(n1, n2, e)| (n1, n2, *e))
+                .collect_vec();
+
+            // copy every incident edge on the old vertex to one of the bridge vertices based on its direction
+            for (n1, n2, e) in old_edges {
+                let other = if n1 == existing_node_here { n2 } else { n1 };
+
+                let bridge_node_this_direction = Node {
+                    location: *bridge_loc,
+                    cell: Cell::BRIDGE {
+                        affiliation: None,
+                        direction: e.direction.ensure_forward(),
+                    },
+                };
+
+                graph.add_edge(other, bridge_node_this_direction, Edge {
+                    affiliation: 0,
+                    direction: e.direction,
+                });
+            }
+
+            // cut the old one out
+            graph.remove_node(existing_node_here);
+        }
+
+        // TODO: handle warps, any shape besides simple complete rectangle graph
 
         let mut affiliation_displays = Vec::with_capacity(self.affiliation_displays.len() + 1);
         // affiliation 0 is unaffiliated and will display as empty
