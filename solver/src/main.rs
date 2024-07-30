@@ -1,6 +1,7 @@
 use std::num::NonZero;
 
-use permanganate::{Location, SquareNumberlinkBoardBuilder};
+use permanganate::builder::SquareNumberlinkBoardBuilder;
+use permanganate::Location;
 
 fn main() {
     // flow free extreme pack 2 12x12 level 13

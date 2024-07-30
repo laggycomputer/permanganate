@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 
-pub use builder::{BuilderInvalidReason, SquareNumberlinkBoardBuilder};
 pub use location::Location;
+pub use graph::GeneralNumberlinkBoard;
 
 pub(crate) mod graph;
 mod tests;
@@ -10,4 +10,4 @@ pub(crate) mod location;
 pub(crate) mod logic;
 pub(crate) mod shape;
 pub(crate) mod cell;
-pub(crate) mod builder;
+pub mod builder;
