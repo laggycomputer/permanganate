@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 
-use crate::common::affiliation::AffiliationID;
-use crate::common::shape::BoardShape;
+use crate::affiliation::AffiliationID;
+use crate::shape::BoardShape;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub(crate) enum NumberlinkCell<Sh: BoardShape> {

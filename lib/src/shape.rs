@@ -8,8 +8,8 @@ use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
 
-use crate::common::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
-use crate::common::location::{Dimension, Location};
+use crate::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
+use crate::location::{Dimension, Location};
 use crate::graph::{Edge, Node};
 
 pub(crate) trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {

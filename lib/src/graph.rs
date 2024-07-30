@@ -12,11 +12,11 @@ use petgraph::visit::IntoNodeIdentifiers;
 use unordered_pair::UnorderedPair;
 use varisat::{CnfFormula, Lit, Solver, Var};
 
-use crate::common::affiliation::AffiliationID;
-use crate::common::cell::{FrozenCellType, NumberlinkCell};
-use crate::common::location::{Dimension, Location};
-use crate::common::logic::exactly_one;
-use crate::common::shape::{BoardShape, SquareStep, Step};
+use crate::affiliation::AffiliationID;
+use crate::cell::{FrozenCellType, NumberlinkCell};
+use crate::location::{Dimension, Location};
+use crate::logic::exactly_one;
+use crate::shape::{BoardShape, SquareStep, Step};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub(crate) struct Node<Sh: BoardShape> {

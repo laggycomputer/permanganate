@@ -2,7 +2,7 @@
 mod tests {
     use std::num::NonZero;
 
-    use crate::common::location::Location;
+    use crate::location::Location;
     use crate::graph::SquareNumberlinkBoardBuilder;
 
     #[test]
