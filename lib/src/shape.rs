@@ -33,8 +33,9 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
     fn print(board: Array2<char>) -> String;
 }
 
+/// The square cell type and rectangular board shape, as found in Numberlink puzzles, Flow Free, and the Bridges and Warps expansions.
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
-pub(crate) enum SquareStep {
+pub enum SquareStep {
     UP,
     DOWN,
     LEFT,
