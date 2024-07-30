@@ -10,11 +10,18 @@ use unordered_pair::UnorderedPair;
 use crate::cell::NumberlinkCell;
 use crate::graph::{Edge, GeneralNumberlinkBoard, Node};
 use crate::location::{Dimension, Location};
-use crate::shape::{SquareStep, Step};
+use crate::shape::{BoardShape, SquareStep, Step};
 
 #[derive(Copy, Clone, Debug)]
 pub enum BuilderInvalidReason {
     FeatureOutOfBounds,
+}
+
+pub trait Builder<Sh: BoardShape> {
+    fn with_dims(dims: (Dimension, Dimension)) -> Self;
+    fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self;
+    fn remove_termini(&mut self, display: char) -> &mut Self;
+    fn build(&self) -> Result<GeneralNumberlinkBoard<Sh>, Vec<BuilderInvalidReason>>;
 }
 
 pub struct SquareNumberlinkBoardBuilder {
@@ -36,8 +43,8 @@ impl Default for SquareNumberlinkBoardBuilder {
     }
 }
 
-impl SquareNumberlinkBoardBuilder {
-    pub fn with_dims(dims: (Dimension, Dimension)) -> Self {
+impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
+    fn with_dims(dims: (Dimension, Dimension)) -> Self {
         Self {
             dims,
             cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
@@ -51,7 +58,7 @@ impl SquareNumberlinkBoardBuilder {
         }
     }
 
-    pub fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self {
+    fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self {
         if !self.invalid_reasons.is_empty() {
             return self;
         }
@@ -73,7 +80,7 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub fn remove_termini(&mut self, display: char) -> &mut Self {
+    fn remove_termini(&mut self, display: char) -> &mut Self {
         if !self.invalid_reasons.is_empty() {
             return self;
         }
@@ -93,7 +100,7 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
+    fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
         if !self.invalid_reasons.is_empty() {
             return Err(self.invalid_reasons.clone());
         }
