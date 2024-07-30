@@ -51,7 +51,7 @@ impl SquareNumberlinkBoardBuilder {
         }
     }
 
-    pub fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut SquareNumberlinkBoardBuilder {
+    pub fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self {
         if !self.invalid_reasons.is_empty() {
             return self;
         }
