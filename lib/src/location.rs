@@ -6,7 +6,7 @@ type Coord = usize;
 pub(crate) type Dimension = NonZero<Coord>;
 
 #[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
-// x, y
+/// A location `(x, y)` on a board. The top left corner is `Location(0, 0)`.
 pub struct Location(pub(crate) Coord, pub(crate) Coord);
 
 impl Location {

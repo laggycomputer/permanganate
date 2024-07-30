@@ -7,7 +7,7 @@
 //! Convert it to a board object, then call [`solve()`](GeneralNumberlinkBoard.solve()), consuming the board and yielding a solved version of the board.
 //!
 //! `permanganate` can operate on generic board shapes, as encoded by the `Sh` type parameter.
-//! These shapes must implement [`Step`] and will automatically have [`BoardShape`] `impl`'d as well.
+//! These shapes must implement [`Step`](crate::shape::Step) and will automatically have [`BoardShape`](crate::shape::BoardShape) `impl`'d as well.
 //!
 //! # Internals
 //! This crate is driven by expressing the problem as a Boolean satisfiability problem (a "SAT"), extracting information from that solver, and re-expressing the board accordingly.
@@ -31,7 +31,6 @@
 
 pub use location::Location;
 pub use board::Board;
-pub use shape::{Step, BoardShape};
 pub use crate::builder::Builder;
 
 pub(crate) mod board;

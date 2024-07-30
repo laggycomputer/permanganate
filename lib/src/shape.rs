@@ -8,28 +8,22 @@ use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
 
-use crate::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
-use crate::location::{Dimension, Location};
 use crate::board::{Edge, Node};
+use crate::cell::{FrozenCellType, FrozenNumberLinkCell, NumberlinkCell};
+use crate::location::{Dimension, Location};
 
 /// Functionality that must be implemented on a case-by-case basis for any board shape.
 ///
 /// [`SquareStep`] and [`HexStep`] are built-in implementations.
 pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
-    /// Attempt the step from `location` in the direction specified by `self` and return the resultant [`Location`](crate::Location).
+    /// Attempt the step from `location` in the direction specified by `self` and return the resultant [`Location`].
     fn attempt_from(&self, location: Location) -> Location;
     /// Return the static array of all "forward" directions.
     ///
     /// Forward directions should be those which, upon stepping from one location to another, cause the destination location to be indexed higher than the origin location.
     /// For example, for [`SquareStep`] and given the row-major ordering of the cell array, [`DOWN`](SquareStep::DOWN) and [`RIGHT`](SquareStep::RIGHT) are forward directions.
     fn forward_edge_directions() -> &'static [Self];
-    /// Invert the direction specified by `self`:
-    /// ```
-    /// use permanganate::shape::SquareStep;
-    /// use permanganate::Step;
-    ///
-    /// assert_eq!(SquareStep::DOWN.invert(), SquareStep::UP);
-    /// ```
+    /// Invert the direction specified by `self`.
     fn invert(&self) -> Self;
     /// Convert the graph in `board` to an array representation.
     ///
@@ -40,7 +34,7 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
 }
 
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
-pub enum SquareStep {
+pub(crate) enum SquareStep {
     UP,
     DOWN,
     LEFT,
