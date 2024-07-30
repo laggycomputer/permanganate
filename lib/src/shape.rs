@@ -10,7 +10,7 @@ use strum::VariantArray;
 
 use crate::cell::{NumberlinkCell, FrozenCellType, FrozenNumberLinkCell};
 use crate::location::{Dimension, Location};
-use crate::graph::{Edge, Node};
+use crate::board::{Edge, Node};
 
 pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
     fn attempt_from(&self, location: Location) -> Location;

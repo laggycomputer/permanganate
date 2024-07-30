@@ -30,10 +30,10 @@
 //! This is more performant than backtracking or graph algorithm based solutions.
 
 pub use location::Location;
-pub use graph::GeneralNumberlinkBoard;
+pub use board::Board;
 pub use shape::{Step, BoardShape};
 
-pub(crate) mod graph;
+pub(crate) mod board;
 mod tests;
 pub(crate) mod affiliation;
 pub(crate) mod location;

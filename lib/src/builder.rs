@@ -8,7 +8,7 @@ use petgraph::graphmap::UnGraphMap;
 use unordered_pair::UnorderedPair;
 
 use crate::cell::NumberlinkCell;
-use crate::graph::{Edge, GeneralNumberlinkBoard, Node};
+use crate::board::{Edge, Board, Node};
 use crate::location::{Dimension, Location};
 use crate::shape::{BoardShape, SquareStep, Step};
 
@@ -24,8 +24,8 @@ pub trait Builder<Sh: BoardShape> {
     fn with_dims(dims: (Dimension, Dimension)) -> Self;
     fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self;
     fn remove_termini(&mut self, display: char) -> &mut Self;
-    /// Convert the state of this builder into a [`GeneralNumberlinkBoard`].
-    fn build(&self) -> Result<GeneralNumberlinkBoard<Sh>, Vec<BuilderInvalidReason>>;
+    /// Convert the state of this builder into a [`Board`].
+    fn build(&self) -> Result<Board<Sh>, Vec<BuilderInvalidReason>>;
 }
 
 /// A builder for boards with square-shaped cells, i.e. the rectangular boards found in Numberlink puzzles and in Flow Free and the Bridges and Warps expansions.
@@ -105,7 +105,7 @@ impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
         self
     }
 
-    fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
+    fn build(&self) -> Result<Board<SquareStep>, Vec<BuilderInvalidReason>> {
         if !self.invalid_reasons.is_empty() {
             return Err(self.invalid_reasons.clone());
         }
@@ -147,7 +147,7 @@ impl Builder<SquareStep> for SquareNumberlinkBoardBuilder {
         affiliation_displays.push('.');
         affiliation_displays.extend(self.affiliation_displays.clone());
 
-        Ok(GeneralNumberlinkBoard {
+        Ok(Board {
             graph,
             dims: self.dims,
             affiliation_displays,

@@ -52,7 +52,7 @@ impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
     }
 }
 
-pub struct GeneralNumberlinkBoard<Sh>
+pub struct Board<Sh>
 where
     Sh: BoardShape,
 {
@@ -61,7 +61,7 @@ where
     pub(crate) affiliation_displays: Vec<char>,
 }
 
-impl<Sh> GeneralNumberlinkBoard<Sh>
+impl<Sh> Board<Sh>
 where
     Sh: BoardShape,
 {
@@ -251,7 +251,7 @@ where
     }
 }
 
-impl<Sh: BoardShape> Display for GeneralNumberlinkBoard<Sh> {
+impl<Sh: BoardShape> Display for Board<Sh> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Sh::print(Sh::gph_to_array(self.dims, &self.graph).map(|cell| match cell.cell_type {
             FrozenCellType::TERMINUS { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_uppercase(),
