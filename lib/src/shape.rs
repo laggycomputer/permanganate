@@ -111,7 +111,10 @@ impl Step for SquareStep {
                         Cell::BRIDGE { affiliation, direction } => {
                             exits.insert(direction);
                             exits.insert(direction.invert());
-                            affiliations.insert(direction.ensure_forward(), NonZero::new(affiliation.unwrap()).unwrap());
+                            affiliations.insert(
+                                direction.ensure_forward(),
+                                affiliation.and_then(|aff| NonZero::new(aff)),
+                            );
                         }
                         _ => unreachable!()
                     }

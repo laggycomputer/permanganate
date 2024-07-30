@@ -17,7 +17,7 @@ pub(crate) enum Cell<Sh: BoardShape> {
 pub(crate) enum FrozenCellType<Sh: BoardShape> {
     TERMINUS { affiliation: NonZero<AffiliationID> },
     PATH { affiliation: NonZero<AffiliationID> },
-    BRIDGE { affiliations: HashMap<Sh, NonZero<AffiliationID>> },
+    BRIDGE { affiliations: HashMap<Sh, Option<NonZero<AffiliationID>>> },
     #[default]
     EMPTY,
 }
