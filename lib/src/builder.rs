@@ -28,7 +28,7 @@ pub trait Builder<Sh: BoardShape> {
     /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if either location is out of bounds.
     /// If the builder is already in an invalid state, this function does nothing.
     fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self;
-    /// Remove the most recently added termini.
+    /// Remove the most recently added pair of termini.
     ///
     /// If the builder is in an invalid state or no termini are present, this function does nothing.
     fn pop_termini(&mut self) -> &mut Self;
