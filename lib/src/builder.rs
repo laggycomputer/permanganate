@@ -12,8 +12,10 @@ use crate::graph::{Edge, GeneralNumberlinkBoard, Node};
 use crate::location::{Dimension, Location};
 use crate::shape::{BoardShape, SquareStep, Step};
 
+/// Reasons a builder may become invalid while being built.
 #[derive(Copy, Clone, Debug)]
 pub enum BuilderInvalidReason {
+    /// A feature like a bridge was inserted outside the bounds specified by `dims` on a builder.
     FeatureOutOfBounds,
 }
 
