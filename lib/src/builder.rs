@@ -35,6 +35,14 @@ pub trait Builder<Sh: BoardShape>: Clone {
     ///
     /// If the builder is in an invalid state or no termini are present, this function does nothing.
     fn pop_termini(&mut self) -> &mut Self;
+    /// Add a bridge at the specified `location`.
+    ///
+    /// A bridge allows paths to enter and exit independently of one another, all passing through the same location.
+    /// Paths must not change direction while moving through the bridge.
+    ///
+    /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if `location` is out of bounds.
+    /// If the builder is already in an invalid state, this function does nothing.
+    fn add_bridge(&mut self, location: Location) -> &mut Self;
     /// Check the validity of this builder, ensuring no [`BuilderInvalidReason`] condition has arisen.
     ///
     /// Returns `None` if the builder is valid, `Some(&Vec<BuilderInvalidReason>)` otherwise.
@@ -120,6 +128,21 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             })
         }
 
+        self
+    }
+
+    fn add_bridge(&mut self, location: Location) -> &mut Self {
+        if !self.invalid_reasons.is_empty() {
+            return self;
+        }
+
+        // todo: check this better; bridges right next to warps are *technically* possible
+        if !(1..(self.dims.0.get() - 1)).contains(&location.0) || !(1..(self.dims.1.get() - 1)).contains(&location.1) {
+            self.invalid_reasons.push(BuilderInvalidReason::FeatureOutOfBounds);
+            return self;
+        }
+
+        self.bridges.insert(location);
         self
     }
 
