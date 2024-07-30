@@ -31,7 +31,11 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
     /// assert_eq!(SquareStep::DOWN.invert(), SquareStep::UP);
     /// ```
     fn invert(&self) -> Self;
+    /// Convert the graph in `board` to an array representation.
+    ///
+    /// New shapes should implement this and determine a scheme by which the graph can be embedded in an [`ndarray::Array2`].
     fn gph_to_array(dims: (Dimension, Dimension), board: &UnGraphMap<Node<Self>, Edge<Self>>) -> Array2<FrozenNumberLinkCell<Self>>;
+    /// Dump the specified [`ndarray::Array2`], laying out individual characters based on the geometry of the shape [`Self`].
     fn print(board: Array2<char>) -> String;
 }
 
