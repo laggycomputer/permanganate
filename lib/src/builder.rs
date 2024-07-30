@@ -19,13 +19,16 @@ pub enum BuilderInvalidReason {
     FeatureOutOfBounds,
 }
 
+/// Functionality all builders must implement, parametrised over the grid shape `Sh` of the resulting board.
 pub trait Builder<Sh: BoardShape> {
     fn with_dims(dims: (Dimension, Dimension)) -> Self;
     fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut Self;
     fn remove_termini(&mut self, display: char) -> &mut Self;
+    /// Convert the state of this builder into a [`GeneralNumberlinkBoard`].
     fn build(&self) -> Result<GeneralNumberlinkBoard<Sh>, Vec<BuilderInvalidReason>>;
 }
 
+/// A builder for boards with square-shaped cells, i.e. the rectangular boards found in Numberlink puzzles and in Flow Free and the Bridges and Warps expansions.
 pub struct SquareNumberlinkBoardBuilder {
     // width, height
     dims: (Dimension, Dimension),
