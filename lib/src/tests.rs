@@ -120,4 +120,42 @@ cAEeB
 CBbbb
 ");
     }
+
+    #[test]
+    fn adjacent_bridges() {
+        // flow free bridges hashed pack 7x7 level 1
+        let board = SquareBoardBuilder::with_dims((NonZero::new(7).unwrap(), NonZero::new(7).unwrap()))
+            .add_termini('A', (Location(0, 5), Location(5, 6)))
+            .add_termini('B', (Location(0, 0), Location(6, 6)))
+            .add_termini('C', (Location(1, 1), Location(6, 1)))
+            .add_termini('D', (Location(1, 2), Location(6, 4)))
+            .add_termini('E', (Location(1, 5), Location(6, 2)))
+            .add_termini('F', (Location(4, 2), Location(4, 5)))
+            .add_bridge(Location(2, 3))
+            .add_bridge(Location(2, 4))
+            .add_bridge(Location(3, 3))
+            .add_bridge(Location(3, 4))
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), "B......
+.C....C
+.D..F.E
+..++...
+..++..D
+AE..F..
+.....AB
+");
+
+        let solved = board.solve().unwrap();
+        println!("{}", solved);
+        assert_eq!(format!("{}", solved), "Bcccccc
+bCeeeeC
+bDefFeE
+bd++ddd
+bb++bbD
+AEefFbb
+aaaaaAB
+");
+    }
 }
