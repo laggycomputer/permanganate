@@ -1,5 +1,6 @@
 use std::cmp::min;
 use std::collections::HashSet;
+use std::convert::identity;
 use std::fmt::{Display, Formatter};
 use std::ops::Range;
 
@@ -100,7 +101,7 @@ where
             .unwrap()
     }
 
-    pub fn solve(mut self) -> Self {
+    pub fn solve(mut self) -> Option<Self> {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
@@ -217,7 +218,9 @@ where
         let mut solver = Solver::new();
         formulae.into_iter().for_each(|formula| solver.add_formula(&formula));
         solver.assume(assumptions.into_iter().as_ref());
-        solver.solve().unwrap();
+        if !solver.solve().is_ok_and(identity) {
+            return None;
+        };
         let model = solver.model().unwrap();
 
         let mut solved_graph: UnGraphMap<Node<Sh>, Edge<Sh>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
@@ -247,7 +250,7 @@ where
         }
 
         self.graph = solved_graph;
-        self
+        Some(self)
     }
 }
 
