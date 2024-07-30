@@ -100,7 +100,7 @@ where
             .unwrap()
     }
 
-    pub(crate) fn solve(mut self) -> Self {
+    pub fn solve(mut self) -> Self {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 

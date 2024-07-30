@@ -1,5 +1,7 @@
 use std::num::NonZero;
 
+use permanganate::{Location, SquareNumberlinkBoardBuilder};
+
 fn main() {
     // flow free extreme pack 2 12x12 level 13
     let mut board = SquareNumberlinkBoardBuilder::with_dims((NonZero::new(12).unwrap(), NonZero::new(12).unwrap()))

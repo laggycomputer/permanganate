@@ -7,7 +7,7 @@ pub(crate) type Dimension = NonZero<Coord>;
 
 #[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
 // x, y
-pub(crate) struct Location(pub(crate) Coord, pub(crate) Coord);
+pub struct Location(pub(crate) Coord, pub(crate) Coord);
 
 impl Location {
     pub(crate) fn as_index(&self) -> (Coord, Coord) {

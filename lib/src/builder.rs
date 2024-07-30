@@ -10,11 +10,11 @@ use crate::location::{Dimension, Location};
 use crate::shape::{SquareStep, Step};
 
 #[derive(Copy, Clone, Debug)]
-pub(crate) enum BuilderInvalidReason {
+pub enum BuilderInvalidReason {
     FeatureOutOfBounds,
 }
 
-pub(crate) struct SquareNumberlinkBoardBuilder {
+pub struct SquareNumberlinkBoardBuilder {
     // width, height
     dims: (Dimension, Dimension),
     cells: Array2<NumberlinkCell<SquareStep>>,
@@ -34,7 +34,7 @@ impl Default for SquareNumberlinkBoardBuilder {
 }
 
 impl SquareNumberlinkBoardBuilder {
-    pub(crate) fn with_dims(dims: (Dimension, Dimension)) -> Self {
+    pub fn with_dims(dims: (Dimension, Dimension)) -> Self {
         Self {
             dims,
             cells: Array2::from_shape_simple_fn((dims.1.get(), dims.0.get()), NumberlinkCell::default),
@@ -48,7 +48,7 @@ impl SquareNumberlinkBoardBuilder {
         }
     }
 
-    pub(crate) fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut SquareNumberlinkBoardBuilder {
+    pub fn add_termini(&mut self, display: char, locations: (Location, Location)) -> &mut SquareNumberlinkBoardBuilder {
         if !self.invalid_reasons.is_empty() {
             return self;
         }
@@ -70,7 +70,7 @@ impl SquareNumberlinkBoardBuilder {
         self
     }
 
-    pub(crate) fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
+    pub fn build(&self) -> Result<GeneralNumberlinkBoard<SquareStep>, Vec<BuilderInvalidReason>> {
         if !self.invalid_reasons.is_empty() {
             return Err(self.invalid_reasons.clone());
         }
