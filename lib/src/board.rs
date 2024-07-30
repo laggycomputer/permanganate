@@ -92,7 +92,7 @@ where
                     // offset for location...
                     + ((lower_index_location.1 * self.dims.0.get() + lower_index_location.0)
                     // then edge "direction"...
-                    * Sh::forward_edge_directions().len() + Sh::forward_edge_directions().iter().find_position(|dir| **dir == direction.ensure_forward()).unwrap().0)
+                    * Sh::FORWARD_VARIANTS.len() + Sh::FORWARD_VARIANTS.iter().find_position(|dir| **dir == direction.ensure_forward()).unwrap().0)
                     // then affiliation
                     * self.valid_affiliations().len() + affiliation
             }

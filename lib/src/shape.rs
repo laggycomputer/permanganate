@@ -9,7 +9,7 @@ use petgraph::graphmap::UnGraphMap;
 use strum::VariantArray;
 
 use crate::board::{Edge, Node};
-use crate::cell::{FrozenCellType, FrozenCell, Cell};
+use crate::cell::{Cell, FrozenCell, FrozenCellType};
 use crate::location::{Dimension, Location};
 
 /// Functionality that must be implemented on a case-by-case basis for any board shape.
@@ -18,11 +18,11 @@ use crate::location::{Dimension, Location};
 pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
     /// Attempt the step from `location` in the direction specified by `self` and return the resultant [`Location`].
     fn attempt_from(&self, location: Location) -> Location;
-    /// Return the static array of all "forward" directions.
+    /// The static array of all "forward" directions.
     ///
     /// Forward directions should be those which, upon stepping from one location to another, cause the destination location to be indexed higher than the origin location.
     /// For example, for [`SquareStep`] and given the row-major ordering of the cell array, [`DOWN`](SquareStep::DOWN) and [`RIGHT`](SquareStep::RIGHT) are forward directions.
-    fn forward_edge_directions() -> &'static [Self];
+    const FORWARD_VARIANTS: &'static [Self];
     /// Invert the direction specified by `self`.
     fn invert(&self) -> Self;
     /// Convert the graph in `board` to an array representation.
@@ -52,9 +52,7 @@ impl Step for SquareStep {
         }
     }
 
-    fn forward_edge_directions() -> &'static [Self] {
-        &[Self::RIGHT, Self::DOWN]
-    }
+    const FORWARD_VARIANTS: &'static [Self] = &[Self::RIGHT, Self::DOWN];
 
     fn invert(&self) -> Self {
         match self {
@@ -105,7 +103,7 @@ impl Step for SquareStep {
             } else {
                 // this is a bridge
                 let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
-                let mut affiliations = HashMap::with_capacity(Self::forward_edge_directions().len());
+                let mut affiliations = HashMap::with_capacity(Self::FORWARD_VARIANTS.len());
 
                 for node in relevant_nodes {
                     match node.cell {
@@ -170,9 +168,7 @@ impl Step for HexStep {
         }
     }
 
-    fn forward_edge_directions() -> &'static [Self] {
-        &[Self::DOWN, Self::RIGHTDOWN, Self::DOWNLEFT]
-    }
+    const FORWARD_VARIANTS: &'static [Self] = &[Self::DOWN, Self::RIGHTDOWN, Self::DOWNLEFT];
 
     fn invert(&self) -> Self {
         match self {
@@ -224,7 +220,7 @@ where
     }
 
     fn ensure_forward(&self) -> Self {
-        match Self::forward_edge_directions().contains(self) {
+        match Self::FORWARD_VARIANTS.contains(self) {
             true => *self,
             false => self.invert(),
         }
