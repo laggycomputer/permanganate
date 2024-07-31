@@ -174,11 +174,11 @@ impl Shape for HexStep {
         match self {
             Self::Up => location.offset_by((0, -2)),
             // these are more complicated; consider the parity of the rows
-            Self::UpRight => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
-            Self::RightDown => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
+            Self::UpRight => location.offset_by((if location.1 % 2 == 0 { 1 } else { 0 }, -1)),
+            Self::RightDown => location.offset_by((if location.1 % 2 == 0 { 1 } else { 0 }, -1)),
             Self::Down => location.offset_by((0, 2)),
-            Self::DownLeft => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, 1)),
-            Self::LeftUp => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, -1)),
+            Self::DownLeft => location.offset_by((if location.1 % 2 == 0 { 0 } else { -1 }, 1)),
+            Self::LeftUp => location.offset_by((if location.1 % 2 == 0 { 0 } else { -1 }, -1)),
         }
     }
 
