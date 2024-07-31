@@ -10,7 +10,7 @@ use crate::cell::{Cell, FrozenCellType};
 use crate::location::{Dimension, Location};
 use crate::shape::BoardShape;
 use crate::solver;
-use crate::solver::{GraphSolver, Terminus};
+use crate::solver::{GraphSolver, SolverFailure, Terminus};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub(crate) struct Node<Sh: BoardShape> {
@@ -77,32 +77,12 @@ impl<Sh> Board<Sh>
 where
     Sh: BoardShape,
 {
-    /// Solves this board, mutating and consuming `self` and returning a solved version of `self`.
-    /// If this board is unsolvable, return [`None`].
-    /// Otherwise, return `Some(self)`.
+    /// Solves this board, deferring to a [`GraphSolver`] and mutating and returning `self` accordingly.
     ///
-    /// # Logical setup
-    /// Suppose this board is undirected graph G.
-    ///
-    /// ## Vertices
-    /// Every vertex V on G must have exactly one nonzero affiliation.
-    /// If V is a terminus, its affiliation is known and all other affiliations are incorrect.
-    /// Exactly one incident edge has the same affiliation (the edge by which the path exits this terminus).
-    /// Every other incident edge has no affiliation (i.e. affiliation 0).
-    ///
-    /// If V is not a terminus, it must have exactly one (not yet known) affiliation A.
-    /// Then V is on the path between the two termini with affiliation A and has two incident edges with affiliation A.
-    /// Every other incident edge has no affiliation.
-    ///
-    /// ## Edges
-    /// Every edge E on G has exactly one affiliation, which may be 0.
-    ///
-    /// The two endpoints of E have the same affiliation if and only if E has the same nonzero affiliation.
-    /// So, by complement, the two endpoints of E have different affiliation if and only if E has no affiliation.
-    /// We encode the former of these two biconditionals.
-    pub fn solve(mut self) -> Option<Self> {
+    /// Returns according to the result of [`GraphSolver::solve`].
+    pub fn solve(mut self) -> Result<Self, SolverFailure> {
         let solver = GraphSolver::from(&self.graph);
-        let solution = solver.solve().unwrap();
+        let solution = solver.solve()?;
 
         let mut solved_graph: UnGraphMap<Node<Sh>, Edge<Sh>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
         for node in self.graph.nodes() {
@@ -128,7 +108,7 @@ where
         }
 
         self.graph = solved_graph;
-        Some(self)
+        Ok(self)
     }
 }
 

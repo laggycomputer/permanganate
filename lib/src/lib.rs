@@ -29,9 +29,10 @@
 //! We then solve and assign data to the graph accordingly.
 //! This is more performant than backtracking or graph algorithm based solutions.
 
-pub use location::Location;
 pub use board::Board;
-pub use crate::builder::Builder;
+pub use builder::Builder;
+pub use location::Location;
+pub use solver::GraphSolver;
 
 pub(crate) mod board;
 mod tests;

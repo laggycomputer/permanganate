@@ -12,13 +12,19 @@ use varisat::{CnfFormula, Lit, Solver, Var};
 use crate::affiliation::AffiliationID;
 use crate::logic::exactly_one;
 
-pub(crate) trait Terminus: NodeTrait /* constraints on GraphMap */ {
+/// Constraint on node types given to [`GraphSolver`].
+pub trait Terminus: NodeTrait /* constraints on GraphMap */ {
     fn is_terminus(&self) -> Option<NonZero<AffiliationID>>;
 }
 
+/// Reasons a [`GraphSolver`] may fail.
 #[derive(Debug)]
-pub(crate) enum SolverFailure {
-    INCONSISTENT,
+pub enum SolverFailure {
+    /// The SAT solver detected a logical inconsistency, i.e. the graph as stated is unsolvable.
+    Inconsistent,
+    /// The SAT solver could not solve the affiliation of at least one node and/or edge.
+    /// This should probably never happen.
+    NoAffFound,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
@@ -47,7 +53,11 @@ where
     }
 }
 
-pub(crate) struct GraphSolver<'a, N, E>
+/// The most general implementation of the logic necessary to solve a graph in accordance with the rules for Numberlink.
+/// Use [`Self::solve`] to attempt to find a solution.
+///
+/// The only requirement is that the node struct on the input graph implements [`Terminus`], so it may be noted as a terminus.
+pub struct GraphSolver<'a, N, E>
 where
     N: Terminus,
 {
@@ -101,13 +111,33 @@ where
     }
 
     #[inline]
-    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation<N, E>, nonzero: bool) -> AffiliationID {
+    fn solved_affiliation_of(&self, model: &Vec<Lit>, subject: HasAffiliation<N, E>, nonzero: bool) -> Option<AffiliationID> {
         (if nonzero { self.valid_affiliations() } else { self.valid_non_null_affiliations() })
             .find(|aff| model.get(self.affiliation_var(subject, *aff).index()).unwrap().is_positive())
-            .unwrap()
     }
 
-    pub(crate) fn solve(&self) -> Result<HashMap<HasAffiliation<N, E>, AffiliationID>, SolverFailure> {
+    /// Solve a Numberlink graph, returning [`Ok`] with a [`HashMap`] of solved affiliations for each edge and vertex or [`Err`] with a [`SolverFailure`] reason.
+    ///
+    /// # Logical setup
+    /// Suppose this board is undirected graph G.
+    ///
+    /// ## Vertices
+    /// Every vertex V on G must have exactly one nonzero affiliation.
+    /// If V is a terminus, its affiliation is known and all other affiliations are incorrect.
+    /// Exactly one incident edge has the same affiliation (the edge by which the path exits this terminus).
+    /// Every other incident edge has no affiliation (i.e. affiliation 0).
+    ///
+    /// If V is not a terminus, it must have exactly one (not yet known) affiliation A.
+    /// Then V is on the path between the two termini with affiliation A and has two incident edges with affiliation A.
+    /// Every other incident edge has no affiliation.
+    ///
+    /// ## Edges
+    /// Every edge E on G has exactly one affiliation, which may be 0.
+    ///
+    /// The two endpoints of E have the same affiliation if and only if E has the same nonzero affiliation.
+    /// So, by complement, the two endpoints of E have different affiliation if and only if E has no affiliation.
+    /// We encode the former of these two biconditionals.
+    pub fn solve(&self) -> Result<HashMap<HasAffiliation<N, E>, AffiliationID>, SolverFailure> {
         let mut assumptions: Vec<Lit> = Vec::new();
         let mut formulae: Vec<CnfFormula> = Vec::new();
 
@@ -220,18 +250,28 @@ where
         formulae.into_iter().for_each(|formula| solver.add_formula(&formula));
         solver.assume(assumptions.into_iter().as_ref());
         if !solver.solve().is_ok_and(identity) {
-            return Err(SolverFailure::INCONSISTENT);
+            return Err(SolverFailure::Inconsistent);
         };
         let model = solver.model().unwrap();
 
         let mut solved_affiliations = HashMap::new();
 
         for node in self.graph.nodes() {
-            solved_affiliations.insert(HasAffiliation::from_node(node), self.solved_affiliation_of(&model, HasAffiliation::from_node(node), false));
+            solved_affiliations.insert(
+                HasAffiliation::from_node(node),
+                match self.solved_affiliation_of(&model, HasAffiliation::from_node(node), false) {
+                    None => return Err(SolverFailure::NoAffFound),
+                    Some(aff) => aff
+                });
         }
 
         for edge_triple in self.graph.all_edges() {
-            solved_affiliations.insert(HasAffiliation::from_edge(edge_triple), self.solved_affiliation_of(&model, HasAffiliation::from_edge(edge_triple), false));
+            solved_affiliations.insert(
+                HasAffiliation::from_edge(edge_triple),
+                match self.solved_affiliation_of(&model, HasAffiliation::from_edge(edge_triple), false) {
+                    None => return Err(SolverFailure::NoAffFound),
+                    Some(aff) => aff
+                });
         }
 
         Ok(solved_affiliations)
