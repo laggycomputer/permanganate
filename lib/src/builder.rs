@@ -5,7 +5,6 @@ use std::ops::IndexMut;
 use itertools::Itertools;
 use ndarray::{Array2, AssignElem};
 use petgraph::graphmap::UnGraphMap;
-use petgraph::visit::IntoEdges;
 use unordered_pair::UnorderedPair;
 
 use crate::board::{Board, Edge, Node};

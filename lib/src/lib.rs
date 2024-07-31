@@ -41,3 +41,4 @@ pub(crate) mod logic;
 pub mod shape;
 pub(crate) mod cell;
 pub mod builder;
+pub(crate) mod solver;
