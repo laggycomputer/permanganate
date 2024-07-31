@@ -10,7 +10,7 @@ use unordered_pair::UnorderedPair;
 use crate::board::{Board, Edge, Node};
 use crate::cell::Cell;
 use crate::location::{Dimension, Location};
-use crate::shape::{BoardShape, SquareStep, Step};
+use crate::shape::{FullShape, SquareStep, Shape};
 
 /// Reasons a builder may become invalid while building.
 #[derive(Copy, Clone, Debug)]
@@ -24,7 +24,7 @@ pub enum BuilderInvalidReason {
 /// Functionality all builders must implement, parametrised over the grid shape `Sh` of the resulting board.
 ///
 /// Builders mutate themselves while building but can be [`Clone`]d to save their state at some point.
-pub trait Builder<Sh: BoardShape>: Clone {
+pub trait Builder<Sh: FullShape>: Clone {
     /// Construct a new [`Self`] with the specified dimensions, specified in `(x, y)` order.
     fn with_dims(dims: (Dimension, Dimension)) -> Self;
     /// Add termini or "flow endpoints". The order in which `locations` are specified does not matter.

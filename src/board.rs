@@ -8,12 +8,12 @@ use unordered_pair::UnorderedPair;
 use crate::affiliation::AffiliationID;
 use crate::cell::{Cell, FrozenCellType};
 use crate::location::{Dimension, Location};
-use crate::shape::BoardShape;
+use crate::shape::FullShape;
 use crate::solver;
 use crate::solver::{GraphSolver, SolverFailure, Terminus};
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub(crate) struct Node<Sh: BoardShape> {
+pub(crate) struct Node<Sh: FullShape> {
     pub(crate) location: Location,
     pub(crate) cell: Cell<Sh>,
 }
@@ -21,7 +21,7 @@ pub(crate) struct Node<Sh: BoardShape> {
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub(crate) struct Edge<Sh>
 where
-    Sh: BoardShape,
+    Sh: FullShape,
 {
     pub(crate) affiliation: AffiliationID,
     // direction from lower indexed edge
@@ -30,7 +30,7 @@ where
 
 impl<Sh> Terminus for Node<Sh>
 where
-    Sh: BoardShape,
+    Sh: FullShape,
 {
     fn is_terminus(&self) -> Option<NonZero<AffiliationID>> {
         match self.cell {
@@ -46,14 +46,14 @@ enum HasAffiliation<Sh> {
     Edge { nodes: UnorderedPair<Location>, direction: Sh },
 }
 
-impl<Sh: BoardShape> From<&(Node<Sh>, Node<Sh>, &Edge<Sh>)> for HasAffiliation<Sh>
+impl<Sh: FullShape> From<&(Node<Sh>, Node<Sh>, &Edge<Sh>)> for HasAffiliation<Sh>
 {
     fn from(value: &(Node<Sh>, Node<Sh>, &Edge<Sh>)) -> Self {
         Self::Edge { nodes: UnorderedPair::from((value.0.location, value.1.location)), direction: value.2.direction }
     }
 }
 
-impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
+impl<Sh: FullShape> From<Node<Sh>> for HasAffiliation<Sh>
 {
     fn from(value: Node<Sh>) -> Self {
         Self::Node { location: value.location }
@@ -61,12 +61,12 @@ impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
 }
 
 /// A board object using cells organized as specified by `Sh`.
-/// See the [`BoardShape`] and [`Step`](crate::shape::Step) traits for more information.
+/// See the [`FullShape`] and [`Step`](crate::shape::Shape) traits for more information.
 ///
 /// [`Board`]s should be built using a [`Builder`](crate::builder::Builder) such as [`SquareBoardBuilder`](crate::builder::SquareBoardBuilder).
 pub struct Board<Sh>
 where
-    Sh: BoardShape,
+    Sh: FullShape,
 {
     pub(crate) graph: UnGraphMap<Node<Sh>, Edge<Sh>>,
     pub(crate) dims: (Dimension, Dimension),
@@ -75,7 +75,7 @@ where
 
 impl<Sh> Board<Sh>
 where
-    Sh: BoardShape,
+    Sh: FullShape,
 {
     /// Solves this board, deferring to a [`GraphSolver`](crate::solver::GraphSolver) and mutating and returning `self` accordingly.
     ///
@@ -112,7 +112,7 @@ where
     }
 }
 
-impl<Sh: BoardShape> Display for Board<Sh> {
+impl<Sh: FullShape> Display for Board<Sh> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Sh::print(Sh::gph_to_array(self.dims, &self.graph).map(|cell| match cell.cell_type {
             FrozenCellType::Terminus { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_uppercase(),

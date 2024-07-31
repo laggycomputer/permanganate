@@ -15,7 +15,7 @@ use crate::location::{Dimension, Location};
 /// Functionality that must be implemented on a case-by-case basis for any board shape.
 ///
 /// [`SquareStep`] and [`HexStep`] are built-in implementations.
-pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
+pub trait Shape: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + PartialOrd {
     /// Attempt the step from `location` in the direction specified by `self` and return the resultant [`Location`].
     fn attempt_from(&self, location: Location) -> Location;
     /// The static array of all "forward" directions.
@@ -43,7 +43,7 @@ pub enum SquareStep {
     // switch it up like nintendo
 }
 
-impl Step for SquareStep {
+impl Shape for SquareStep {
     fn attempt_from(&self, location: Location) -> Location {
         match self {
             Self::Up => location.offset_by((0, -1)),
@@ -169,7 +169,7 @@ enum HexStep {
     LeftUp,
 }
 
-impl Step for HexStep {
+impl Shape for HexStep {
     fn attempt_from(&self, location: Location) -> Location {
         match self {
             Self::Up => location.offset_by((0, -2)),
@@ -204,24 +204,24 @@ impl Step for HexStep {
     }
 }
 
-/// Functionality on top of [`Step`] required by [`Board`](crate::Board)s with identical implementation across all `Sh`.
-pub trait BoardShape: Step {
+/// Functionality on top of [`Shape`] required by [`Board`](crate::Board)s with identical implementation across all `Sh`.
+pub trait FullShape: Shape {
     /// Get all neighbors of a [`Location`] in "theory", by attempting every step direction in `Self::VARIANTS`.
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)>;
-    /// Determine the direction from `a` to `b` by calling [`attempt_from`](Step::attempt_from) until one works.
+    /// Determine the direction from `a` to `b` by calling [`attempt_from`](Shape::attempt_from) until one works.
     ///
     /// This is not exhaustive since it does not consider any graph-based information.
     /// It works only on two [`Location`]s which are adjacent in the array representation of their [`Board`](crate::Board) and will return [`None`] otherwise.
     fn direction_to(a: Location, b: Location) -> Option<Self>;
     /// Convert this [`Self`] to a "forward" direction, if it is not already such a direction.
     ///
-    /// For the definition of forward directions, see [`Step::FORWARD_VARIANTS`].
+    /// For the definition of forward directions, see [`Shape::FORWARD_VARIANTS`].
     fn ensure_forward(&self) -> Self;
 }
 
-impl<Sh> BoardShape for Sh
+impl<Sh> FullShape for Sh
 where
-    Sh: Step,
+    Sh: Shape,
 {
     fn neighbors_of(&self, location: Location) -> Vec<(Self, Location)> {
         Self::VARIANTS.iter()
