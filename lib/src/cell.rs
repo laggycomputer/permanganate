@@ -6,20 +6,20 @@ use crate::shape::BoardShape;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub(crate) enum Cell<Sh: BoardShape> {
-    TERMINUS { affiliation: AffiliationID },
-    PATH { affiliation: AffiliationID },
-    BRIDGE { affiliation: Option<AffiliationID>, direction: Sh },
+    Terminus { affiliation: AffiliationID },
+    Path { affiliation: AffiliationID },
+    Bridge { affiliation: Option<AffiliationID>, direction: Sh },
     #[default]
-    EMPTY,
+    Empty,
 }
 
 #[derive(Clone, Default)]
 pub(crate) enum FrozenCellType<Sh: BoardShape> {
-    TERMINUS { affiliation: NonZero<AffiliationID> },
-    PATH { affiliation: NonZero<AffiliationID> },
-    BRIDGE { affiliations: HashMap<Sh, Option<NonZero<AffiliationID>>> },
+    Terminus { affiliation: NonZero<AffiliationID> },
+    Path { affiliation: NonZero<AffiliationID> },
+    Bridge { affiliations: HashMap<Sh, Option<NonZero<AffiliationID>>> },
     #[default]
-    EMPTY,
+    Empty,
 }
 
 #[derive(Clone)]
@@ -32,7 +32,7 @@ impl<Sh: BoardShape> Default for FrozenCell<Sh> {
     fn default() -> Self {
         Self {
             exits: Default::default(),
-            cell_type: FrozenCellType::EMPTY,
+            cell_type: FrozenCellType::Empty,
         }
     }
 }

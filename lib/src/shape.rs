@@ -21,7 +21,7 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
     /// The static array of all "forward" directions.
     ///
     /// Forward directions should be those which, upon stepping from one location to another, cause the destination location to be indexed higher than the origin location.
-    /// For example, for [`SquareStep`] and given the row-major ordering of the cell array, [`DOWN`](SquareStep::DOWN) and [`RIGHT`](SquareStep::RIGHT) are forward directions.
+    /// For example, for [`SquareStep`] and given the row-major ordering of the cell array, [`DOWN`](SquareStep::Down) and [`RIGHT`](SquareStep::Right) are forward directions.
     const FORWARD_VARIANTS: &'static [Self];
     /// Invert the direction specified by `self`.
     fn invert(&self) -> Self;
@@ -36,31 +36,31 @@ pub trait Step: Sized + Copy + VariantArray + PartialEq + Eq + Hash + Ord + Part
 /// The square cell type and rectangular board shape, as found in Numberlink puzzles, Flow Free, and the Bridges and Warps expansions.
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub enum SquareStep {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
+    Up,
+    Down,
+    Left,
+    Right,
     // switch it up like nintendo
 }
 
 impl Step for SquareStep {
     fn attempt_from(&self, location: Location) -> Location {
         match self {
-            Self::UP => location.offset_by((0, -1)),
-            Self::DOWN => location.offset_by((0, 1)),
-            Self::LEFT => location.offset_by((-1, 0)),
-            Self::RIGHT => location.offset_by((1, 0)),
+            Self::Up => location.offset_by((0, -1)),
+            Self::Down => location.offset_by((0, 1)),
+            Self::Left => location.offset_by((-1, 0)),
+            Self::Right => location.offset_by((1, 0)),
         }
     }
 
-    const FORWARD_VARIANTS: &'static [Self] = &[Self::RIGHT, Self::DOWN];
+    const FORWARD_VARIANTS: &'static [Self] = &[Self::Right, Self::Down];
 
     fn invert(&self) -> Self {
         match self {
-            Self::UP => Self::DOWN,
-            Self::DOWN => Self::UP,
-            Self::LEFT => Self::RIGHT,
-            Self::RIGHT => Self::LEFT,
+            Self::Up => Self::Down,
+            Self::Down => Self::Up,
+            Self::Left => Self::Right,
+            Self::Right => Self::Left,
         }
     }
 
@@ -95,9 +95,9 @@ impl Step for SquareStep {
                 ptr.assign_elem(FrozenCell {
                     exits,
                     cell_type: match this_node.cell {
-                        Cell::TERMINUS { affiliation } => FrozenCellType::TERMINUS { affiliation: NonZero::new(affiliation).unwrap() },
-                        Cell::PATH { affiliation } => FrozenCellType::PATH { affiliation: NonZero::new(affiliation).unwrap() },
-                        Cell::EMPTY => FrozenCellType::EMPTY,
+                        Cell::Terminus { affiliation } => FrozenCellType::Terminus { affiliation: NonZero::new(affiliation).unwrap() },
+                        Cell::Path { affiliation } => FrozenCellType::Path { affiliation: NonZero::new(affiliation).unwrap() },
+                        Cell::Empty => FrozenCellType::Empty,
                         _ => unreachable!()
                     },
                 });
@@ -108,7 +108,7 @@ impl Step for SquareStep {
 
                 for node in relevant_nodes {
                     match node.cell {
-                        Cell::BRIDGE { affiliation, direction } => {
+                        Cell::Bridge { affiliation, direction } => {
                             exits.insert(direction);
                             exits.insert(direction.invert());
                             affiliations.insert(
@@ -122,7 +122,7 @@ impl Step for SquareStep {
 
                 ptr.assign_elem(FrozenCell {
                     exits,
-                    cell_type: FrozenCellType::BRIDGE { affiliations },
+                    cell_type: FrozenCellType::Bridge { affiliations },
                 })
             }
         }
@@ -151,37 +151,37 @@ impl Step for SquareStep {
 //   0   1   2   3
 #[derive(Copy, Clone, VariantArray, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 enum HexStep {
-    UP,
-    UPRIGHT,
-    RIGHTDOWN,
-    DOWN,
-    DOWNLEFT,
-    LEFTUP,
+    Up,
+    UpRight,
+    RightDown,
+    Down,
+    DownLeft,
+    LeftUp,
 }
 
 impl Step for HexStep {
     fn attempt_from(&self, location: Location) -> Location {
         match self {
-            Self::UP => location.offset_by((0, -2)),
+            Self::Up => location.offset_by((0, -2)),
             // these are more complicated; consider the parity of the rows
-            Self::UPRIGHT => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
-            Self::RIGHTDOWN => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
-            Self::DOWN => location.offset_by((0, 2)),
-            Self::DOWNLEFT => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, 1)),
-            Self::LEFTUP => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, -1)),
+            Self::UpRight => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
+            Self::RightDown => location.offset_by((if location.1 & 2 == 0 { 1 } else { 0 }, -1)),
+            Self::Down => location.offset_by((0, 2)),
+            Self::DownLeft => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, 1)),
+            Self::LeftUp => location.offset_by((if location.1 & 2 == 0 { 0 } else { -1 }, -1)),
         }
     }
 
-    const FORWARD_VARIANTS: &'static [Self] = &[Self::DOWN, Self::RIGHTDOWN, Self::DOWNLEFT];
+    const FORWARD_VARIANTS: &'static [Self] = &[Self::Down, Self::RightDown, Self::DownLeft];
 
     fn invert(&self) -> Self {
         match self {
-            Self::UP => Self::DOWN,
-            Self::UPRIGHT => Self::DOWNLEFT,
-            Self::RIGHTDOWN => Self::LEFTUP,
-            Self::DOWN => Self::UP,
-            Self::DOWNLEFT => Self::UPRIGHT,
-            Self::LEFTUP => Self::RIGHTDOWN,
+            Self::Up => Self::Down,
+            Self::UpRight => Self::DownLeft,
+            Self::RightDown => Self::LeftUp,
+            Self::Down => Self::Up,
+            Self::DownLeft => Self::UpRight,
+            Self::LeftUp => Self::RightDown,
         }
     }
 

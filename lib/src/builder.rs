@@ -103,7 +103,7 @@ impl Builder<SquareStep> for SquareBoardBuilder {
         let aff = self.affiliation_displays.len() + 1;
         self.affiliation_displays.push(display);
         for location in [locations.0, locations.1] {
-            self.cells.index_mut(location.as_index()).assign_elem(Cell::TERMINUS { affiliation: aff })
+            self.cells.index_mut(location.as_index()).assign_elem(Cell::Terminus { affiliation: aff })
         }
 
         self
@@ -119,8 +119,8 @@ impl Builder<SquareStep> for SquareBoardBuilder {
         if display.is_some() {
             self.cells.map_inplace(|cell| {
                 match cell {
-                    Cell::TERMINUS { affiliation } => if *affiliation == aff_to_remove {
-                        cell.assign_elem(Cell::EMPTY);
+                    Cell::Terminus { affiliation } => if *affiliation == aff_to_remove {
+                        cell.assign_elem(Cell::Empty);
                     },
                     _ => {}
                 }
@@ -176,15 +176,15 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             for y in 0..self.dims.1.get() {
                 let location = Location(x, y);
                 // add edges down and to the right, if possible
-                let location_below = SquareStep::DOWN.attempt_from(location);
-                let location_right = SquareStep::RIGHT.attempt_from(location);
+                let location_below = SquareStep::Down.attempt_from(location);
+                let location_right = SquareStep::Right.attempt_from(location);
 
                 let node = nodes.get(location.as_index()).unwrap();
                 let node_below = nodes.get(location_below.as_index());
                 let node_right = nodes.get(location_right.as_index());
 
-                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: 0, direction: SquareStep::DOWN }));
-                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: 0, direction: SquareStep::RIGHT }));
+                node_below.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: 0, direction: SquareStep::Down }));
+                node_right.and_then(|other_node| graph.add_edge(*node, *other_node, Edge { affiliation: 0, direction: SquareStep::Right }));
             }
         }
 
@@ -204,7 +204,7 @@ impl Builder<SquareStep> for SquareBoardBuilder {
 
                 let bridge_node_this_direction = Node {
                     location: *bridge_loc,
-                    cell: Cell::BRIDGE {
+                    cell: Cell::Bridge {
                         affiliation: None,
                         direction: e.direction.ensure_forward(),
                     },

@@ -56,7 +56,7 @@ where
 /// The most general implementation of the logic necessary to solve a graph in accordance with the rules for Numberlink.
 /// Use [`Self::solve`] to attempt to find a solution.
 ///
-/// The only requirement is that the node struct on the input graph implements [`Terminus`], so it may be noted as a terminus.
+/// The only requirement is that the node struct on the input graph implements [`Terminus`], so it may be noted as a Terminus.
 pub struct GraphSolver<'a, N, E>
 where
     N: Terminus,
@@ -123,11 +123,11 @@ where
     ///
     /// ## Vertices
     /// Every vertex V on G must have exactly one nonzero affiliation.
-    /// If V is a terminus, its affiliation is known and all other affiliations are incorrect.
-    /// Exactly one incident edge has the same affiliation (the edge by which the path exits this terminus).
+    /// If V is a Terminus, its affiliation is known and all other affiliations are incorrect.
+    /// Exactly one incident edge has the same affiliation (the edge by which the path exits this Terminus).
     /// Every other incident edge has no affiliation (i.e. affiliation 0).
     ///
-    /// If V is not a terminus, it must have exactly one (not yet known) affiliation A.
+    /// If V is not a Terminus, it must have exactly one (not yet known) affiliation A.
     /// Then V is on the path between the two termini with affiliation A and has two incident edges with affiliation A.
     /// Every other incident edge has no affiliation.
     ///

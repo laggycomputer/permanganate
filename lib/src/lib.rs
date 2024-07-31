@@ -20,11 +20,11 @@
 //! By using the most general terms possible, we can express map features such as bridges and warps and cell shapes beyond a rectangular grid.
 //!
 //! We make the following assertions in SAT form:
-//! 1. Every vertex is either a "terminus" (the origin of a flow) or a "path" (part of the path from one terminus to another).
+//! 1. Every vertex is either a "Terminus" (the origin of a flow) or a "path" (part of the path from one Terminus to another).
 //! All cells must be colored, so this vertex has some "affiliation" not equal to the null affiliation, 0.
-//! If V is a terminus, exactly one incident edge has the same affiliation as V.
+//! If V is a Terminus, exactly one incident edge has the same affiliation as V.
 //! Otherwise, exactly two incident edges have the same affiliation.
-//! 2. Every edge either has affiliation 0, meaning its endpoints have different affiliations, or has a nonzero affiliation, meaning it shares an affiliation with its endpoints and is on the path from one identically affiliated terminus to the other.
+//! 2. Every edge either has affiliation 0, meaning its endpoints have different affiliations, or has a nonzero affiliation, meaning it shares an affiliation with its endpoints and is on the path from one identically affiliated Terminus to the other.
 //!
 //! We then solve and assign data to the graph accordingly.
 //! This is more performant than backtracking or graph algorithm based solutions.

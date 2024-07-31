@@ -34,7 +34,7 @@ where
 {
     fn is_terminus(&self) -> Option<NonZero<AffiliationID>> {
         match self.cell {
-            Cell::TERMINUS { affiliation, .. } => Some(NonZero::new(affiliation).unwrap()),
+            Cell::Terminus { affiliation, .. } => Some(NonZero::new(affiliation).unwrap()),
             _ => None
         }
     }
@@ -42,21 +42,21 @@ where
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash)]
 enum HasAffiliation<Sh> {
-    NODE { location: Location },
-    EDGE { nodes: UnorderedPair<Location>, direction: Sh },
+    Node { location: Location },
+    Edge { nodes: UnorderedPair<Location>, direction: Sh },
 }
 
 impl<Sh: BoardShape> From<&(Node<Sh>, Node<Sh>, &Edge<Sh>)> for HasAffiliation<Sh>
 {
     fn from(value: &(Node<Sh>, Node<Sh>, &Edge<Sh>)) -> Self {
-        Self::EDGE { nodes: UnorderedPair::from((value.0.location, value.1.location)), direction: value.2.direction }
+        Self::Edge { nodes: UnorderedPair::from((value.0.location, value.1.location)), direction: value.2.direction }
     }
 }
 
 impl<Sh: BoardShape> From<Node<Sh>> for HasAffiliation<Sh>
 {
     fn from(value: Node<Sh>) -> Self {
-        Self::NODE { location: value.location }
+        Self::Node { location: value.location }
     }
 }
 
@@ -87,10 +87,10 @@ where
         let mut solved_graph: UnGraphMap<Node<Sh>, Edge<Sh>> = GraphMap::with_capacity(self.graph.node_count(), self.graph.edge_count());
         for node in self.graph.nodes() {
             let mut new_node = node.clone();
-            if node.cell == Cell::EMPTY {
-                new_node.cell = Cell::PATH { affiliation: *solution.get(&solver::HasAffiliation::from_node(node)).unwrap() }
+            if node.cell == Cell::Empty {
+                new_node.cell = Cell::Path { affiliation: *solution.get(&solver::HasAffiliation::from_node(node)).unwrap() }
             }
-            // existing terminus and path cells can stay as is
+            // existing Terminus and path cells can stay as is
 
             solved_graph.add_node(new_node);
         }
@@ -115,10 +115,10 @@ where
 impl<Sh: BoardShape> Display for Board<Sh> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Sh::print(Sh::gph_to_array(self.dims, &self.graph).map(|cell| match cell.cell_type {
-            FrozenCellType::TERMINUS { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_uppercase(),
-            FrozenCellType::PATH { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_lowercase(),
-            FrozenCellType::BRIDGE { .. } => '+',
-            FrozenCellType::EMPTY => '.',
+            FrozenCellType::Terminus { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_uppercase(),
+            FrozenCellType::Path { affiliation } => self.affiliation_displays.get(affiliation.get()).unwrap().to_ascii_lowercase(),
+            FrozenCellType::Bridge { .. } => '+',
+            FrozenCellType::Empty => '.',
         })))
     }
 }
