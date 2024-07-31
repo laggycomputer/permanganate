@@ -182,4 +182,35 @@ dDCBD
 CccbB
 ");
     }
+
+    #[test]
+    fn warp_with_holes() {
+        // flow free warps starter pack level 1
+        let board = SquareBoardBuilder::with_dims((NonZero::new(6).unwrap(), NonZero::new(3).unwrap()))
+            .add_termini('A', (Location(0, 1), Location(4, 1)))
+            .add_termini('B', (Location(1, 0), Location(3, 0)))
+            .add_termini('C', (Location(1, 1), Location(3, 1)))
+            .add_termini('D', (Location(1, 2), Location(3, 2)))
+            .add_warp(Location(0, 1), None)
+            .drop_location(Location(0, 0))
+            .drop_location(Location(0, 2))
+            .drop_location(Location(4, 0))
+            .drop_location(Location(5, 0))
+            .drop_location(Location(4, 2))
+            .drop_location(Location(5, 2))
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), ".B.B..
+AC.CA.
+.D.D..
+");
+
+        let solved = board.solve().unwrap();
+        assert_eq!(format!("{}", solved), ".BbB..
+ACcCAa
+.DdD..
+");
+    }
+
 }

@@ -44,6 +44,13 @@ pub trait Builder<Sh: BoardShape>: Clone {
     /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if `location` is out of bounds.
     /// If the builder is already in an invalid state, this function does nothing.
     fn add_bridge(&mut self, location: Location) -> &mut Self;
+    /// Drop a location from the board.
+    /// Any feature here, such as a bridge, warp, or terminus, will be deleted regardless of where in the chain this method is called.
+    /// Keep in mind this may cause the board to become unsolvable.
+    ///
+    /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if `location` is out of bounds.
+    /// If the builder is already in an invalid state, this function does nothing.
+    fn drop_location(&mut self, location: Location) -> &mut Self;
     /// Check the validity of this builder, ensuring no [`BuilderInvalidReason`] condition has arisen.
     ///
     /// Returns `None` if the builder is valid, `Some(&Vec<BuilderInvalidReason>)` otherwise.
@@ -62,7 +69,7 @@ pub struct SquareBoardBuilder {
     invalid_reasons: Vec<BuilderInvalidReason>,
     // TODO
     edge_blacklist: HashSet<UnorderedPair<Location>>,
-    node_blacklist: HashSet<Location>,
+    location_blacklist: HashSet<Location>,
     bridges: HashSet<Location>,
     edge_whitelist: HashSet<(UnorderedPair<Location>, SquareStep)>,
     affiliation_displays: Vec<char>,
@@ -82,7 +89,7 @@ impl Builder<SquareStep> for SquareBoardBuilder {
 
             invalid_reasons: Default::default(),
             edge_blacklist: Default::default(),
-            node_blacklist: Default::default(),
+            location_blacklist: Default::default(),
             bridges: Default::default(),
             edge_whitelist: Default::default(),
             affiliation_displays: Default::default(),
@@ -144,6 +151,20 @@ impl Builder<SquareStep> for SquareBoardBuilder {
         }
 
         self.bridges.insert(location);
+        self
+    }
+
+    fn drop_location(&mut self, location: Location) -> &mut Self {
+        if !self.invalid_reasons.is_empty() {
+            return self;
+        }
+
+        if location.0 >= self.dims.0.get() || location.1 >= self.dims.1.get() {
+            self.invalid_reasons.push(BuilderInvalidReason::FeatureOutOfBounds);
+            return self;
+        }
+
+        self.location_blacklist.insert(location);
         self
     }
 
@@ -226,7 +247,10 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             graph.remove_node(existing_node_here);
         }
 
-        // TODO: handle any shape besides simple complete rectangle graph
+        for location in self.location_blacklist.iter() {
+            let to_rm = graph.nodes().filter(|n| n.location == *location).collect_vec();
+            to_rm.iter().for_each(|n| { graph.remove_node(*n); });
+        }
 
         let mut affiliation_displays = Vec::with_capacity(self.affiliation_displays.len() + 1);
         // affiliation 0 is unaffiliated and will display as empty
