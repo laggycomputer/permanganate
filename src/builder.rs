@@ -339,7 +339,7 @@ impl SquareBoardBuilder {
 
         // not on any edge
         if location.0 != 0 && location.1 == 0 && location.0 != self.dims.0.get() - 1 && location.1 != self.dims.1.get() {
-            self.invalid_reasons.push(BuilderInvalidReason::WarpBadDirection);
+            self.invalid_reasons.push(BuilderInvalidReason::FeatureOutOfBounds);
             return self;
         }
 
