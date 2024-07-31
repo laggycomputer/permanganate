@@ -77,9 +77,9 @@ impl<Sh> Board<Sh>
 where
     Sh: BoardShape,
 {
-    /// Solves this board, deferring to a [`GraphSolver`] and mutating and returning `self` accordingly.
+    /// Solves this board, deferring to a [`GraphSolver`](crate::solver::GraphSolver) and mutating and returning `self` accordingly.
     ///
-    /// Returns according to the result of [`GraphSolver::solve`].
+    /// Returns according to the result of [`GraphSolver::solve`](crate::solver::GraphSolver::solve).
     pub fn solve(mut self) -> Result<Self, SolverFailure> {
         let solver = GraphSolver::from(&self.graph);
         let solution = solver.solve()?;
