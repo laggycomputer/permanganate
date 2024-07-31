@@ -253,4 +253,50 @@ eccccddd
 eeeEcccC
 ");
     }
+
+    #[test]
+    fn warps_and_bridges() {
+        // flow free bridges warps pack level 150
+        let board = SquareBoardBuilder::with_dims((NonZero::new(9).unwrap(), NonZero::new(9).unwrap()))
+            .add_termini('A', (Location(6, 1), Location(7, 2)))
+            .add_termini('B', (Location(3, 2), Location(5, 6)))
+            .add_termini('C', (Location(3, 4), Location(5, 3)))
+            .add_termini('D', (Location(2, 7), Location(6, 3)))
+            .add_termini('E', (Location(6, 2), Location(7, 7)))
+            .add_termini('F', (Location(2, 6), Location(4, 8)))
+            .add_termini('G', (Location(1, 0), Location(0, 3)))
+            .add_termini('H', (Location(3, 1), Location(3, 3)))
+            .add_termini('I', (Location(0, 8), Location(3, 7)))
+            .add_termini('J', (Location(5, 5), Location(5, 8)))
+            .add_warp(Location(4, 0), None)
+            .add_warp(Location(4, 8), None)
+            .add_warp(Location(0, 4), None)
+            .add_warp(Location(8, 4), None)
+            .add_bridge(Location(4, 6))
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), ".G.......
+...H..A..
+...B..EA.
+G..H.CD..
+...C.....
+.....J...
+..F.+B...
+..DI...E.
+I...FJ...
+");
+
+        let solved = board.solve().unwrap();
+        assert_eq!(format!("{}", solved), "gGfffeeee
+gffHheAae
+gfbBheEAe
+GfbHhCDee
+dfbCccded
+dfbbjJded
+dfFb+Bded
+ddDIjjdEd
+IiiiFJddd
+");
+    }
 }
