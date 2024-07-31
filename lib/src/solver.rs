@@ -61,7 +61,7 @@ where
 {
     graph: &'a UnGraphMap<N, E>,
     affiliation_holders: Vec<HasAffiliation<N, E>>,
-    num_affiliations: AffiliationID,
+    max_affiliation: AffiliationID,
 }
 
 impl<'a, N, E> From<&'a UnGraphMap<N, E>> for GraphSolver<'a, N, E>
@@ -82,7 +82,7 @@ where
         Self {
             graph,
             affiliation_holders,
-            num_affiliations,
+            max_affiliation: num_affiliations,
         }
     }
 }
@@ -92,20 +92,25 @@ where
     N: Terminus,
     E: PartialEq + Eq + Hash + Copy,
 {
-    #[inline(always)]
+    #[inline]
     fn valid_affiliations(&self) -> RangeInclusive<AffiliationID> {
-        0..=self.num_affiliations
+        0..=self.max_affiliation
     }
 
     #[inline]
     fn valid_non_null_affiliations(&self) -> RangeInclusive<AffiliationID> {
-        1..=self.num_affiliations
+        1..=self.max_affiliation
+    }
+
+    #[inline]
+    fn num_affiliations(&self) -> usize {
+        self.valid_affiliations().try_len().unwrap()
     }
 
     #[inline]
     fn affiliation_var(&self, subject: HasAffiliation<N, E>, affiliation: AffiliationID) -> Var {
         Var::from_index(self.affiliation_holders.iter().find_position(|elem| **elem == subject).unwrap().0
-            * self.num_affiliations + affiliation)
+            * self.num_affiliations() + affiliation)
     }
 
     #[inline]
@@ -267,7 +272,7 @@ where
         for edge_triple in self.graph.all_edges() {
             solved_affiliations.insert(
                 HasAffiliation::from_edge(edge_triple),
-                match self.solved_affiliation_of(&model, HasAffiliation::from_edge(edge_triple), false) {
+                match self.solved_affiliation_of(&model, HasAffiliation::from_edge(edge_triple), true) {
                     None => return Err(SolverFailure::NoAffFound),
                     Some(aff) => aff
                 });
