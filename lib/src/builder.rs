@@ -167,7 +167,7 @@ impl Builder<SquareStep> for SquareBoardBuilder {
                 + (self.dims.1.get() - 1) * self.dims.0.get(),
         );
 
-        let mut nodes = Array2::from_shape_fn(self.cells.raw_dim(), |ind| Node {
+        let nodes = Array2::from_shape_fn(self.cells.raw_dim(), |ind| Node {
             location: Location::from(ind),
             cell: *self.cells.get(ind).unwrap(),
         });
