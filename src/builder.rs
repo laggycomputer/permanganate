@@ -17,6 +17,8 @@ use crate::shape::{BoardShape, SquareStep, Step};
 pub enum BuilderInvalidReason {
     /// A feature like a bridge was inserted outside the bounds specified by `dims` on a builder.
     FeatureOutOfBounds,
+    /// A warp was inserted in a direction which does not make sense; e.g. attempting to place warp on the right edge in the up direction.
+    WarpBadDirection,
 }
 
 /// Functionality all builders must implement, parametrised over the grid shape `Sh` of the resulting board.
@@ -62,7 +64,7 @@ pub struct SquareBoardBuilder {
     edge_blacklist: HashSet<UnorderedPair<Location>>,
     node_blacklist: HashSet<Location>,
     bridges: HashSet<Location>,
-    edge_whitelist: HashSet<UnorderedPair<Location>>,
+    edge_whitelist: HashSet<(UnorderedPair<Location>, SquareStep)>,
     affiliation_displays: Vec<char>,
 }
 
@@ -188,6 +190,10 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             }
         }
 
+        for (UnorderedPair(l1, l2), direction) in self.edge_whitelist.iter() {
+            graph.add_edge(*nodes.get(l1.as_index()).unwrap(), *nodes.get(l2.as_index()).unwrap(), Edge { affiliation: 0, direction: *direction });
+        }
+
         // we replace nodes at a bridge location with multiple nodes, all sharing a location, but each has neighbors only in two opposing directions
         for bridge_loc in &self.bridges {
             // assume there isn't already a bridge here (bridges is hashset so that'll be true)
@@ -220,7 +226,7 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             graph.remove_node(existing_node_here);
         }
 
-        // TODO: handle warps, any shape besides simple complete rectangle graph
+        // TODO: handle any shape besides simple complete rectangle graph
 
         let mut affiliation_displays = Vec::with_capacity(self.affiliation_displays.len() + 1);
         // affiliation 0 is unaffiliated and will display as empty
@@ -232,5 +238,86 @@ impl Builder<SquareStep> for SquareBoardBuilder {
             dims: self.dims,
             affiliation_displays,
         })
+    }
+}
+
+impl SquareBoardBuilder {
+    #[inline]
+    fn max_loc(&self) -> Location {
+        Location(self.dims.0.get() - 1, self.dims.1.get() - 1)
+    }
+
+    /// Add a warp at the specified `location` pointing in `direction`.
+    /// A warp is located on one edge of the board and connects one cell to its partner on the opposite edge of the board along a cardinal direction.
+    ///
+    /// Specifying `direction` necessary if and only if `location` is at a corner, in which case the direction is ambiguous.
+    /// If `location` is on an edge but not at a corner, `direction` is ignored regardless of whether it is specified.
+    ///
+    /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if `location` is out of bounds or not on an edge.
+    /// May cause the builder to enter a [`WarpBadDirection`](BuilderInvalidReason::WarpBadDirection) invalid state if `location` is at a corner and `direction` is missing or is impossible for a warp at this location.
+    /// If the builder is already in an invalid state, this function does nothing.
+    pub fn add_warp(&mut self, location: Location, direction: Option<SquareStep>) -> &mut Self {
+        if !self.invalid_reasons.is_empty() {
+            return self;
+        }
+
+        if location > self.max_loc() {
+            self.invalid_reasons.push(BuilderInvalidReason::FeatureOutOfBounds);
+            return self;
+        }
+
+        // not on any edge
+        if location.0 != 0 && location.1 == 0 && location.0 != self.dims.0.get() - 1 && location.1 != self.dims.1.get() {
+            self.invalid_reasons.push(BuilderInvalidReason::WarpBadDirection);
+            return self;
+        }
+
+        let is_corner = match location {
+            Location(0, 0) => true,
+            Location(0, y) => y == self.max_loc().1,
+            Location(x, 0) => x == self.max_loc().0,
+            Location(x, y) => x == self.max_loc().0 && y == self.max_loc().1
+        };
+
+        let edge = if is_corner {
+            if direction.is_none() {
+                self.invalid_reasons.push(BuilderInvalidReason::WarpBadDirection);
+                return self;
+            }
+
+            direction.unwrap()
+        } else {
+            match location {
+                Location(0, _) => SquareStep::Left,
+                Location(_, 0) => SquareStep::Up,
+                Location(x, y) => {
+                    if x == self.max_loc().0 {
+                        SquareStep::Right
+                    } else {
+                        // always true: y == self.max_loc().1
+                        SquareStep::Down
+                    }
+                }
+            }
+        };
+
+        let partner = match edge {
+            SquareStep::Up => Location(location.0, self.max_loc().1),
+            SquareStep::Down => Location(location.0, 0),
+            SquareStep::Left => Location(self.max_loc().0, location.1),
+            SquareStep::Right => Location(0, location.1),
+        };
+
+        if partner == location {
+            // then the given direction was bad
+            // e.g. top-left corner with down direction specified => "partner" is the first cell in the column => this condition succeeds
+            self.invalid_reasons.push(BuilderInvalidReason::WarpBadDirection);
+            return self;
+        }
+
+        // direction is from lower indexed edge, which is always "backward"
+        self.edge_whitelist.insert((UnorderedPair::from((location, partner)), edge.ensure_forward().invert()));
+
+        self
     }
 }

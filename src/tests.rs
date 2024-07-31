@@ -148,7 +148,6 @@ AE..F..
 ");
 
         let solved = board.solve().unwrap();
-        println!("{}", solved);
         assert_eq!(format!("{}", solved), "Bcccccc
 bCeeeeC
 bDefFeE
@@ -156,6 +155,30 @@ bd++ddd
 bb++bbD
 AEefFbb
 aaaaaAB
+");
+    }
+
+    #[test]
+    fn simple_with_warp() {
+        // flow free warps starter pack level 2
+        let board = SquareBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(3).unwrap()))
+            .add_termini('A', (Location(0, 0), Location(4, 0)))
+            .add_termini('B', (Location(3, 1), Location(4, 2)))
+            .add_termini('C', (Location(0, 2), Location(2, 1)))
+            .add_termini('D', (Location(1, 1), Location(4, 1)))
+            .add_warp(Location(0, 1), None)
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), "A...A
+.DCBD
+C...B
+");
+
+        let solved = board.solve().unwrap();
+        assert_eq!(format!("{}", solved), "AaaaA
+dDCBD
+CccbB
 ");
     }
 }
