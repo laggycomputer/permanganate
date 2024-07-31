@@ -2,6 +2,9 @@
 name = "permanganate"
 version = "0.1.0"
 edition = "2021"
+description = "Graph and Boolean SAT solver for Numberlink and Flow Free"
+license = "MIT"
+repository = "https://github.com/laggycomputer/permanganate"
 
 [dependencies]
 itertools = "0.13.0"
