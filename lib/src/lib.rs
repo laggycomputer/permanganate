@@ -32,7 +32,6 @@
 pub use board::Board;
 pub use builder::Builder;
 pub use location::Location;
-pub use solver::GraphSolver;
 
 pub(crate) mod board;
 mod tests;
