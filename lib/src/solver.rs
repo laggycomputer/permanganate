@@ -107,7 +107,7 @@ where
     #[inline]
     fn affiliation_var(&self, subject: HasAffiliation<N, E>, affiliation: AffiliationID) -> Var {
         Var::from_index(self.affiliation_holders.iter().find_position(|elem| **elem == subject).unwrap().0
-            * self.num_affiliations * affiliation)
+            * self.num_affiliations + affiliation)
     }
 
     #[inline]
