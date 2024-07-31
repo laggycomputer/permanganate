@@ -6,6 +6,9 @@ description = "Graph and Boolean SAT solver for Numberlink and Flow Free"
 license = "MIT"
 repository = "https://github.com/laggycomputer/permanganate"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 itertools = "0.13.0"
 ndarray = "0.15.6"
@@ -13,3 +16,9 @@ petgraph = { version = "0.6.5", features = ["graphmap"] }
 strum = { version = "0.26.3", features = ["derive"] }
 unordered-pair = "0.2.5"
 varisat = "0.2.2"
+wasm-bindgen = { version = "0.2.92", optional = true }
+js-sys = { version = "0.3.69", optional = true }
+
+[features]
+default = ["wasm"]
+wasm = ["dep:wasm-bindgen", "dep:js-sys"]

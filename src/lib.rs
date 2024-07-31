@@ -42,3 +42,5 @@ pub mod shape;
 pub(crate) mod cell;
 pub mod builder;
 pub(crate) mod solver;
+#[cfg(feature = "wasm")]
+pub mod wasm;
