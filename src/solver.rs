@@ -191,9 +191,6 @@ where
 
                         formulae.push(CnfFormula::from(vec![terms]))
                     }
-
-                    // todo: consider adding (V does not have affiliation A) => (no incident edge has affiliation A)
-
                     {
                         formulae.push(CnfFormula::from(all_incident.iter()
                             .map(|e1_triple| {
