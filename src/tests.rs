@@ -93,6 +93,7 @@ CaaaABbEeeee
 ")
     }
 
+    #[test]
     fn simple_with_bridge() {
         // flow free bridges starter pack 5x5 level 2
         let board = SquareBoardBuilder::with_dims((NonZero::new(5).unwrap(), NonZero::new(5).unwrap()))
