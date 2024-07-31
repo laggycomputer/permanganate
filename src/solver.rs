@@ -55,21 +55,21 @@ where
 /// Use [`Self::solve`] to attempt to find a solution.
 ///
 /// The only requirement is that the node struct on the input graph implements [`Terminus`], so it may be noted as a Terminus.
-pub struct GraphSolver<'a, N, E>
+pub struct GraphSolver<'gph, N, E>
 where
     N: Terminus,
 {
-    graph: &'a UnGraphMap<N, E>,
+    graph: &'gph UnGraphMap<N, E>,
     affiliation_holders: Vec<HasAffiliation<N, E>>,
     max_affiliation: AffiliationID,
 }
 
-impl<'a, N, E> From<&'a UnGraphMap<N, E>> for GraphSolver<'a, N, E>
+impl<'gph, N, E> From<&'gph UnGraphMap<N, E>> for GraphSolver<'gph, N, E>
 where
     N: Terminus,
     E: Copy,
 {
-    fn from(graph: &'a UnGraphMap<N, E>) -> Self {
+    fn from(graph: &'gph UnGraphMap<N, E>) -> Self {
         let mut affiliation_holders = Vec::with_capacity(graph.node_count() + graph.edge_count());
         let nodes = graph.nodes().collect_vec();
         let num_affiliations = match nodes.iter().filter_map(|node| node.is_terminus().and_then(Some)).max() {
