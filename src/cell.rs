@@ -22,6 +22,7 @@ pub(crate) enum FrozenCellType<Sh: BoardShape> {
     Empty,
 }
 
+/// Cells, frozen for output or printing.
 #[derive(Clone)]
 pub(crate) struct FrozenCell<Sh: BoardShape> {
     pub(crate) exits: HashSet<Sh>,
