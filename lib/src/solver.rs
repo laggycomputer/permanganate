@@ -253,7 +253,6 @@ where
         formulae.into_iter().for_each(|formula| solver.add_formula(&formula));
         solver.assume(assumptions.into_iter().as_ref());
         if !solver.solve().is_ok_and(identity) {
-            println!("{:?}", solver.failed_core());
             return Err(SolverFailure::Inconsistent);
         };
         let model = solver.model().unwrap();
