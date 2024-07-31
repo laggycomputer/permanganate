@@ -4,6 +4,7 @@ mod tests {
 
     use crate::builder::{Builder, SquareBoardBuilder};
     use crate::location::Location;
+    use crate::shape::SquareStep;
 
     #[test]
     fn remove_termini() {
@@ -210,6 +211,46 @@ AC.CA.
         assert_eq!(format!("{}", solved), ".BbB..
 ACcCAa
 .DdD..
+");
+    }
+
+    #[test]
+    fn walls() {
+        // flow free pockets pack level 1
+        let board = SquareBoardBuilder::with_dims((NonZero::new(8).unwrap(), NonZero::new(8).unwrap()))
+            .add_termini('A', (Location(1, 2), Location(6, 5)))
+            .disconnect_around(Location(1, 2), vec![SquareStep::Left, SquareStep::Down, SquareStep::Right])
+            .disconnect_around(Location(6, 5), vec![SquareStep::Left, SquareStep::Down, SquareStep::Right])
+            .add_termini('B', (Location(2, 5), Location(4, 5)))
+            .disconnect_around(Location(2, 5), vec![SquareStep::Left, SquareStep::Down, SquareStep::Right])
+            .add_termini('C', (Location(4, 4), Location(7, 7)))
+            .disconnect_around(Location(4, 4), vec![SquareStep::Left, SquareStep::Down, SquareStep::Right])
+            .add_termini('D', (Location(5, 2), Location(7, 5)))
+            .disconnect_around(Location(5, 2), vec![SquareStep::Left, SquareStep::Down, SquareStep::Right])
+            .add_termini('E', (Location(3, 1), Location(3, 7)))
+            .disconnect_around(Location(3, 1), vec![SquareStep::Left, SquareStep::Down, SquareStep::Right])
+            .build()
+            .unwrap();
+
+        assert_eq!(format!("{}", board), "........
+...E....
+.A...D..
+........
+....C...
+..B.B.AD
+........
+...E...C
+");
+
+        let solved = board.solve().unwrap();
+        assert_eq!(format!("{}", solved), "eeeeaaaa
+eaaEadda
+eAaaaDda
+eccccdda
+ecbbCdaa
+ecBbBdAD
+eccccddd
+eeeEcccC
 ");
     }
 }

@@ -51,6 +51,19 @@ pub trait Builder<Sh: BoardShape>: Clone {
     /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if `location` is out of bounds.
     /// If the builder is already in an invalid state, this function does nothing.
     fn drop_location(&mut self, location: Location) -> &mut Self;
+    /// Disconnect the two `locations`, i.e. place a wall between them.
+    ///
+    /// A wall prevents paths from crossing it.
+    /// If the two locations are not adjacent, this function does nothing and does not invalidate the builder.
+    ///
+    /// May cause the builder to enter a [`FeatureOutOfBounds`](BuilderInvalidReason::FeatureOutOfBounds) invalid state if either location is out of bounds.
+    /// If the builder is already in an invalid state, this function does nothing.
+    fn disconnect(&mut self, locations: UnorderedPair<Location>) -> &mut Self;
+    /// Shorthand for multiple calls to [`Self::disconnect`], with the same conditions.
+    ///
+    /// Disconnect cells neighboring `location`.
+    /// Any appearance of a direction after the first in `directions` is ignored.
+    fn disconnect_around(&mut self, location: Location, directions: Vec<Sh>) -> &mut Self;
     /// Check the validity of this builder, ensuring no [`BuilderInvalidReason`] condition has arisen.
     ///
     /// Returns `None` if the builder is valid, `Some(&Vec<BuilderInvalidReason>)` otherwise.
@@ -66,13 +79,15 @@ pub struct SquareBoardBuilder {
     // width, height
     dims: (Dimension, Dimension),
     cells: Array2<Cell<SquareStep>>,
+    affiliation_displays: Vec<char>,
     invalid_reasons: Vec<BuilderInvalidReason>,
-    // TODO
+    // walls
     edge_blacklist: HashSet<UnorderedPair<Location>>,
+    // holes
     location_blacklist: HashSet<Location>,
     bridges: HashSet<Location>,
+    // warps
     edge_whitelist: HashSet<(UnorderedPair<Location>, SquareStep)>,
-    affiliation_displays: Vec<char>,
 }
 
 impl Default for SquareBoardBuilder {
@@ -168,6 +183,31 @@ impl Builder<SquareStep> for SquareBoardBuilder {
         self
     }
 
+    fn disconnect(&mut self, locations: UnorderedPair<Location>) -> &mut Self {
+        for location in [locations.0, locations.1] {
+            if location.0 >= self.dims.0.get() || location.1 >= self.dims.1.get() {
+                self.invalid_reasons.push(BuilderInvalidReason::FeatureOutOfBounds);
+                return self;
+            }
+        }
+
+        if !SquareStep::direction_to(locations.0, locations.1).is_some() {
+            return self;
+        }
+
+        self.edge_blacklist.insert(locations);
+
+        self
+    }
+
+    fn disconnect_around(&mut self, location: Location, directions: Vec<SquareStep>) -> &mut Self {
+        for direction in directions {
+            self.disconnect(UnorderedPair::from((location, direction.attempt_from(location))));
+        }
+
+        self
+    }
+
     fn is_valid(&self) -> Option<&Vec<BuilderInvalidReason>> {
         if self.invalid_reasons.is_empty() {
             None
@@ -250,6 +290,13 @@ impl Builder<SquareStep> for SquareBoardBuilder {
         for location in self.location_blacklist.iter() {
             let to_rm = graph.nodes().filter(|n| n.location == *location).collect_vec();
             to_rm.iter().for_each(|n| { graph.remove_node(*n); });
+        }
+
+        for UnorderedPair(l1, l2) in self.edge_blacklist.iter() {
+            for (n1, n2) in graph.nodes().filter(|n| n.location == (*l1)).collect_vec().into_iter()
+                .cartesian_product(graph.nodes().filter(|n| n.location == (*l2)).collect_vec().into_iter()) {
+                graph.remove_edge(n1, n2);
+            }
         }
 
         let mut affiliation_displays = Vec::with_capacity(self.affiliation_displays.len() + 1);
