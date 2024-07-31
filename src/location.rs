@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::num::NonZero;
 
 use ndarray::Ix;
@@ -5,9 +6,15 @@ use ndarray::Ix;
 type Coord = usize;
 pub(crate) type Dimension = NonZero<Coord>;
 
-#[derive(Clone, Eq, Hash, Copy, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, Hash, Copy, PartialEq, PartialOrd, Debug)]
 /// A location `(x, y)` on a board. The top left corner is `Location(0, 0)`.
 pub struct Location(pub Coord, pub Coord);
+
+impl Ord for Location {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_index().cmp(&other.as_index())
+    }
+}
 
 impl Location {
     pub(crate) fn as_index(&self) -> (Coord, Coord) {
