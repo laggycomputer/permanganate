@@ -71,60 +71,70 @@ impl Step for SquareStep {
             let relevant_nodes = board.nodes()
                 .filter(|n| n.location == Location::from(index))
                 .collect_vec();
-            assert!(relevant_nodes.len() > 0);
 
-            if relevant_nodes.len() == 1 {
-                let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
-
-                let this_node = relevant_nodes.index(0);
-                for edge_triple in board.edges(*this_node) {
-                    let (n1, n2, e) = edge_triple;
-                    let neighbor = if n1 == *this_node { n2 } else { n1 };
-                    // not a warp if a "typical" step can reach the neighbor, direction_to would return Some
-                    exits.insert(Self::direction_to(this_node.location, neighbor.location).unwrap_or({
-                        // warp; the direction in the edge struct is correct only if this node is indexed lower than its neighbor, otherwise it is reversed
-                        let mut direction = e.direction;
-                        if *this_node < neighbor {
-                            direction = direction.invert();
-                        }
-
-                        direction
-                    }));
-                }
-
-                ptr.assign_elem(FrozenCell {
-                    exits,
-                    cell_type: match this_node.cell {
-                        Cell::Terminus { affiliation } => FrozenCellType::Terminus { affiliation: NonZero::new(affiliation).unwrap() },
-                        Cell::Path { affiliation } => FrozenCellType::Path { affiliation: NonZero::new(affiliation).unwrap() },
-                        Cell::Empty => FrozenCellType::Empty,
-                        _ => unreachable!()
-                    },
-                });
-            } else {
-                // this is a bridge
-                let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
-                let mut affiliations = HashMap::with_capacity(Self::FORWARD_VARIANTS.len());
-
-                for node in relevant_nodes {
-                    match node.cell {
-                        Cell::Bridge { affiliation, direction } => {
-                            exits.insert(direction);
-                            exits.insert(direction.invert());
-                            affiliations.insert(
-                                direction.ensure_forward(),
-                                affiliation.and_then(|aff| NonZero::new(aff)),
-                            );
-                        }
-                        _ => unreachable!()
+            ptr.assign_elem(match relevant_nodes.len() {
+                // this node was removed
+                0 => {
+                    FrozenCell {
+                        exits: Default::default(),
+                        cell_type: FrozenCellType::Empty,
                     }
                 }
+                // this node exists and is not a bridge
+                1 => {
+                    let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
 
-                ptr.assign_elem(FrozenCell {
-                    exits,
-                    cell_type: FrozenCellType::Bridge { affiliations },
-                })
-            }
+                    let this_node = relevant_nodes.index(0);
+                    for edge_triple in board.edges(*this_node) {
+                        let (n1, n2, e) = edge_triple;
+                        let neighbor = if n1 == *this_node { n2 } else { n1 };
+                        // not a warp if a "typical" step can reach the neighbor, direction_to would return Some
+                        exits.insert(Self::direction_to(this_node.location, neighbor.location).unwrap_or({
+                            // warp; the direction in the edge struct is correct only if this node is indexed lower than its neighbor, otherwise it is reversed
+                            let mut direction = e.direction;
+                            if *this_node < neighbor {
+                                direction = direction.invert();
+                            }
+
+                            direction
+                        }));
+                    }
+
+                    FrozenCell {
+                        exits,
+                        cell_type: match this_node.cell {
+                            Cell::Terminus { affiliation } => FrozenCellType::Terminus { affiliation: NonZero::new(affiliation).unwrap() },
+                            Cell::Path { affiliation } => FrozenCellType::Path { affiliation: NonZero::new(affiliation).unwrap() },
+                            Cell::Empty => FrozenCellType::Empty,
+                            _ => unreachable!()
+                        },
+                    }
+                }
+                    // this node is a bridge
+                _ => {
+                    let mut exits = HashSet::with_capacity(Self::VARIANTS.len());
+                    let mut affiliations = HashMap::with_capacity(Self::FORWARD_VARIANTS.len());
+
+                    for node in relevant_nodes {
+                        match node.cell {
+                            Cell::Bridge { affiliation, direction } => {
+                                exits.insert(direction);
+                                exits.insert(direction.invert());
+                                affiliations.insert(
+                                    direction.ensure_forward(),
+                                    affiliation.and_then(|aff| NonZero::new(aff)),
+                                );
+                            }
+                            _ => unreachable!()
+                        }
+                    }
+
+                    FrozenCell {
+                        exits,
+                        cell_type: FrozenCellType::Bridge { affiliations },
+                    }
+                }
+            })
         }
 
         ret
