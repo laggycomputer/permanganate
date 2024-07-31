@@ -32,8 +32,8 @@ pub(crate) enum HasAffiliation<N, E>
 where
     N: Terminus,
 {
-    NODE { node: N },
-    EDGE { edge: E, endpoints: UnorderedPair<N> },
+    Node { node: N },
+    Edge { edge: E, endpoints: UnorderedPair<N> },
 }
 
 impl<N, E> HasAffiliation<N, E>
@@ -44,12 +44,12 @@ where
     pub(crate) fn from_node(node: N) -> Self
 
     {
-        Self::NODE { node }
+        Self::Node { node }
     }
 
     pub(crate) fn from_edge(triple: (N, N, &E)) -> Self {
         let (n1, n2, e) = triple;
-        Self::EDGE { edge: *e, endpoints: UnorderedPair(n1, n2) }
+        Self::Edge { edge: *e, endpoints: UnorderedPair(n1, n2) }
     }
 }
 
